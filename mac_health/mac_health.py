@@ -367,8 +367,8 @@ def tarjeta():
             {"etiqueta": "Memoria", "valor": "%s de %s GB usados · compresor %s GB · presión %s" % (
                 d.get("mem_usada_gb"), d.get("mem_total_gb"), d.get("compresor_gb"), d.get("presion_texto"))},
             {"etiqueta": "Swap", "valor": "%s de %s GB" % (d.get("swap_usado_gb"), d.get("swap_total_gb"))},
-            {"etiqueta": "Carga / térmico", "valor": "%s por núcleo · CPU al %s %%" % (
-                d.get("carga_por_nucleo"), d.get("limite_termico_cpu") if d.get("limite_termico_cpu") is not None else "?")},
+            {"etiqueta": "Carga / térmico", "valor": "%s por núcleo · %s" % (
+                d.get("carga_por_nucleo"), ("CPU al %s %%" % d["limite_termico_cpu"]) if d.get("limite_termico_cpu") is not None else "sin límite térmico reportado")},
             {"etiqueta": "Disco libre", "valor": "%s GB · Caches %s GB" % (d.get("disco_libre_gb"), d.get("caches_gb"))},
             {"etiqueta": "Servidores locales", "valor": "%d (%d de maquetas/pruebas)" % (
                 len(d.get("listeners", [])), len([l for l in d.get("listeners", []) if not l.get("protegido")]))},
