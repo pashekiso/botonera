@@ -177,7 +177,8 @@ class Estado:
                 "tarjeta": (self.tarjetas.get(m["id"]) or {}).get("tarjeta"),
                 "actualizado": datetime.fromtimestamp((self.tarjetas.get(m["id"]) or {}).get("t", ahora)).strftime("%H:%M:%S"),
                 "botones": [{"accion": k, "etiqueta": ETIQUETAS.get(k, k.replace("_", " ").capitalize()),
-                             "confirmar": bool(v.get("confirmar")) or k in CONFIRMAR}
+                             "confirmar": bool(v.get("confirmar")) or k in CONFIRMAR or bool(v.get("aviso")),
+                             "aviso": str(v.get("aviso") or "")[:600]}
                             for k, v in acciones.items() if k not in OCULTAS and not re.search(r"\{\w+\}", " ".join(v.get("cmd", [])))],
                 "aprueba": bool(acciones.get("pendientes") and acciones.get("aprobar")),
             })

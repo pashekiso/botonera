@@ -76,6 +76,8 @@ Si el comando falla o no imprime JSON, la tarjeta sale roja con el texto del err
 - Cada clave es un botón. Etiquetas conocidas: `iniciar`, `iniciar_sin_ventana`, `detener`, `reiniciar`, `ver_log`,
   `abrir`. Para el resto, la etiqueta es la clave con guiones bajos → espacios (`medir_ahora` → "Medir ahora").
 - `confirmar: true` muestra un diálogo antes de ejecutar; `detener` y `reiniciar` confirman siempre.
+- `aviso: "texto"` es lo que dice ese diálogo (hasta 600 caracteres; `\n` para saltos). Úsalo para acciones con
+  consecuencias que el usuario debe conocer antes (borra datos, cierra apps, tarda). Implica `confirmar`.
 - El comando puede imprimir `{"ok": true|false, "mensaje": "…"}`; si no imprime JSON, se muestra el texto.
   Código de salida 0 = ok cuando no hay JSON.
 - Un `cmd` con marcadores `{n}`, `{nombre}`, `{motivo}`, `{params_json}` **no aparece como botón**: son para

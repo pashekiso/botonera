@@ -75,6 +75,12 @@ def protegido(cmd):
         return False
     return bool(RE_PROTEGIDO.search(cmd))
 CACHES_PROTEGER = {"ms-playwright"}
+AVISO_PREPARAR = ("ATENCIÓN, esto va a:\n"
+                  "• Cerrar las apps abiertas (salvo Finder, Terminal, Claude y navegadores) y los servidores y procesos de pruebas.\n"
+                  "• Vaciar la PAPELERA: lo que esté ahí se borra para siempre. Si guardas cosas en la Papelera, sácalas antes.\n"
+                  "• Borrar las cachés de usuario: algunas apps tardarán más en abrir la primera vez y volverán a descargar datos.\n"
+                  "• Limpiar temporales, registros antiguos y el estado guardado de ventanas.\n"
+                  "Corre en segundo plano (1 a 3 min); el avance se ve en esta tarjeta.")
 
 
 # --------------------------------------------------------------------------- utilidades
@@ -698,8 +704,10 @@ def ficha():
             "estado": {"cmd": yo + ["tarjeta"], "salida": "json"},
             "medir_ahora": {"cmd": yo + ["medir", "--json"], "salida": "json", "nota": "lectura inmediata; tarda unos segundos (du de Caches)"},
             "preparar_reinicio": {"cmd": yo + ["preparar"], "salida": "json", "confirmar": True,
+                                  "aviso": AVISO_PREPARAR,
                                   "nota": "cierra servidores, procesos de pruebas, Docker y apps; limpia cachés, temporales, papelera y estado de ventanas"},
-            "reiniciar_ahora": {"cmd": yo + ["reiniciar"], "salida": "json", "confirmar": True},
+            "reiniciar_ahora": {"cmd": yo + ["reiniciar"], "salida": "json", "confirmar": True,
+                                "aviso": "Se reiniciará el Mac ahora. Si alguna app tiene cambios sin guardar, macOS la dejará abierta y el reinicio se cancela."},
             "ver_log": {"cmd": yo + ["ver_log"], "salida": "json"},
         },
         "archivos": {"estado": str(ESTADO), "historial": str(HISTORIAL), "mantencion": str(MANTENCION), "log": str(LOG_MANT),

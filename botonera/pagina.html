@@ -228,7 +228,7 @@ function detalleServicio(s) {
   const atencion = (t.atencion || []).length
     ? `<div class="atencion">${t.atencion.map(a => `<div>⚠︎ ${esc(a)}</div>`).join('')}</div>` : '';
   const botones = (s.botones || []).map(b =>
-    `<button data-id="${esc(s.id)}" data-accion="${esc(b.accion)}" data-etiqueta="${esc(b.etiqueta)}" data-confirmar="${b.confirmar ? 1 : 0}">${esc(b.etiqueta)}</button>`).join('');
+    `<button data-id="${esc(s.id)}" data-accion="${esc(b.accion)}" data-etiqueta="${esc(b.etiqueta)}" data-confirmar="${b.confirmar ? 1 : 0}" data-aviso="${esc(b.aviso || '')}">${esc(b.etiqueta)}</button>`).join('');
   return {
     semaforo: t.semaforo, titulo: s.nombre || t.titulo, tipo: s.tipo,
     html: `<div class="det-sub">${esc(t.subtitulo || '')}</div>
@@ -372,7 +372,10 @@ document.addEventListener('click', async ev => {
   if (!b || b.disabled) return;
   if (b.dataset.accion) {
     const et = b.dataset.etiqueta;
-    if (b.dataset.confirmar === '1' && !confirm(`¿${et} ${b.dataset.id}?`)) return;
+    if (b.dataset.confirmar === '1') {
+      const texto = b.dataset.aviso ? `${b.dataset.aviso}\n\n¿${et}?` : `¿${et} ${b.dataset.id}?`;
+      if (!confirm(texto)) return;
+    }
     return accion(b.dataset.id, b.dataset.accion, {}, et);
   }
   if (b.dataset.web === 'previa') {
