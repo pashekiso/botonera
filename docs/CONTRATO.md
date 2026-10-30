@@ -2,7 +2,7 @@
 
 La Botonera no sabe nada de tus servicios. Lo único que hace es:
 
-1. Leer todos los `*.json` de la carpeta de registro (`config.json` → `registro`, por defecto `~/dev/botonera/servicios/`)
+1. Leer todos los `*.json` de la carpeta de registro (`config.json` → `registro`, por defecto `servicios/` junto a `botonera.py`)
    que tengan `"esquema": "botonera-servicio/1"` y un `id`.
 2. Ejecutar cada `tarjeta.cmd` cada `cada_segundos` y pintar el JSON que devuelve.
 3. Cuando pulsas un botón, ejecutar el `cmd` de esa acción y mostrar su `mensaje`.

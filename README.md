@@ -2,7 +2,7 @@
 
 *[English version](README.en.md)*
 
-Un panel local para tu Mac que muestra, con semáforo, **todo lo que tienes corriendo** —servicios propios,
+Un panel local para tu computador (macOS, y Windows en beta) que muestra, con semáforo, **todo lo que tienes corriendo** —servicios propios,
 agentes de IA, maquetas, servidores de desarrollo, monitores— y te da botones para iniciarlo, detenerlo,
 aprobar lo que pida aprobación o revisar su registro. Un archivo de Python con biblioteca estándar, una página
 HTML y una carpeta de fichas JSON. Sin dependencias, sin cuentas, sin red: escucha solo en `127.0.0.1`.
@@ -23,7 +23,7 @@ un JSON de pocas líneas.
 | `botonera/` | El panel: `botonera.py` (servidor), `pagina.html` (mosaico + detalle), `puertos.py` (descubre servidores web locales), `estados/comun.py` (ayudante para servicios bajo launchd) y `estados/ejemplo_launchd.py` (plantilla) |
 | `win_health/` | Lo mismo para Windows (**beta, sin probar en Windows real**): archivo de paginación, `%TEMP%`, Papelera de reciclaje, Docker Desktop/WSL ([detalle](win_health/LEEME.md)) |
 | `mac_health/` | Monitor opcional de salud del Mac: mide cada hora memoria, swap, presión, uptime, disco y servidores locales; recomienda reiniciar y, con un botón, prepara el equipo para que el reinicio lo deje limpio ([detalle](mac_health/LEEME.md)) |
-| `fichas-ejemplo/` | Tres fichas de referencia: puerto simple, servicio launchd, CLI propia con aprobaciones |
+| `fichas-ejemplo/` | Tres fichas de referencia: puerto simple, servicio launchd (macOS), CLI propia con aprobaciones |
 | `docs/CONTRATO.md` | El contrato de ficha y tarjeta (lo que necesita saber quien conecte algo) |
 | `docs/CONECTAR.md` | Recetas para sumar tus propias soluciones |
 | `docs/PROMPT-IA.md` | Prompt listo para que tu asistente de IA conecte algo, o replique el panel en tu stack |
@@ -70,7 +70,8 @@ partes portables (servidor, página, lógica de semáforo, parsers) están proba
 
 ## Cómo funciona
 
-1. La Botonera lee las fichas (`*.json` con `"esquema": "botonera-servicio/1"`) de `~/dev/botonera/servicios/`.
+1. La Botonera lee las fichas (`*.json` con `"esquema": "botonera-servicio/1"`) de la carpeta `servicios/` de su
+   instalación (`~/dev/botonera/servicios/` en Mac, `%USERPROFILE%\dev\botonera\servicios\` en Windows).
 2. Cada ficha dice con qué comando se obtiene su **tarjeta** (semáforo, título, subtítulo, datos, avisos) y qué
    **acciones** existen (cada una, un comando). Todo se ejecuta sin shell, con tiempo máximo.
 3. La página pinta un mosaico de tarjetas compactas; al hacer clic se abre el detalle con los botones.
@@ -81,7 +82,7 @@ partes portables (servidor, página, lógica de semáforo, parsers) están proba
 
 ## Conectar tu solución
 
-Lo mínimo es un JSON así en `~/dev/botonera/servicios/`:
+Lo mínimo es un JSON así en la carpeta `servicios/` (rutas absolutas de tu equipo; en Windows, `C:\\...` con doble barra):
 
 ```json
 {
@@ -114,8 +115,10 @@ Si trabajas con un asistente de IA, [docs/PROMPT-IA.md](docs/PROMPT-IA.md) le ex
 
 - macOS y Windows (beta). Linux pediría reemplazar `comun.py` (systemd), `puertos.py` (`ss`) y un `linux_health`.
 - En Windows la receta "servicio bajo launchd" de `docs/CONECTAR.md` no aplica; usa la receta de CLI propia o la de puerto.
-- La mantención de `mac_health` que cierra apps usa AppleScript: la primera vez macOS pide permiso de
+- En macOS, la mantención de OSHealth que cierra apps usa AppleScript: la primera vez macOS pide permiso de
   Automatización; vaciar `~/Library/Caches` y la Papelera puede pedir Acceso total al disco para Terminal.
+- En Windows, OSHealth cierra apps con `CloseMainWindow` (las que tengan documentos sin guardar quedan abiertas y
+  se listan) y apaga Docker Desktop/WSL; el reinicio no se fuerza.
 - No hay autenticación más allá del token local: está pensada para una sola persona en su propio equipo.
 - Desinstalar: `python3 ~/dev/botonera/botonera.py servicio desinstalar`, `python3 ~/dev/mac_health/mac_health.py desinstalar`
   y borrar `~/dev/botonera` y `~/dev/mac_health`.

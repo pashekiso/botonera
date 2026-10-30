@@ -1,7 +1,9 @@
 # Conectar tu propia solución a la Botonera
 
 Tres recetas, de la más simple a la más completa. En todas, el resultado es un `.json` en la carpeta de
-registro (`~/dev/botonera/servicios/`); la Botonera lo toma en la siguiente actualización, sin reiniciarla.
+registro (`servicios/` dentro de la instalación: `~/dev/botonera/` en Mac, `%USERPROFILE%\dev\botonera\` en
+Windows); la Botonera lo toma en la siguiente actualización, sin reiniciarla. Los ejemplos usan rutas de Mac;
+en Windows cambia `python3` por `python` y las rutas por las tuyas (en JSON, con `\\`).
 El contrato completo está en [CONTRATO.md](CONTRATO.md). Si prefieres que tu asistente de IA lo haga por ti,
 pásale [PROMPT-IA.md](PROMPT-IA.md).
 
@@ -9,7 +11,7 @@ pásale [PROMPT-IA.md](PROMPT-IA.md).
 
 No hace falta nada: la sección **Servicios web locales** lo detecta sola. Si además quieres un botón
 **Iniciar**, usa `fichas-ejemplo/maqueta-puerto.json`: la tarjeta es un one-liner de Python que prueba el
-puerto, y `iniciar` abre una Terminal con tu `iniciar.command`.
+puerto, y `iniciar` abre una Terminal con tu `iniciar.command` (en Windows: `cmd /c start tu_iniciar.cmd`).
 
 ```bash
 cp fichas-ejemplo/maqueta-puerto.json ~/dev/botonera/servicios/mi_maqueta.json
@@ -61,7 +63,7 @@ Plantilla: `fichas-ejemplo/script-propio.json`. Consejos que salieron de usarla:
 
 ## Monitores (sin proceso que iniciar o detener)
 
-`mac_health` es el ejemplo: un agente de launchd mide cada hora y deja `estado.json`; la ficha tiene
+`mac_health` / `win_health` son el ejemplo: un agente de launchd (o una tarea programada) mide cada hora y deja `estado.json`; la ficha tiene
 `tipo: "monitor"` (va primero en el mosaico), su tarjeta solo lee ese archivo, y sus botones lanzan
 acciones (medir ahora, preparar reinicio, reiniciar). Copia ese patrón para cualquier cosa que quieras vigilar:
 batería, backups, certificados por vencer, espacio en un NAS, colas de trabajo.

@@ -2,7 +2,7 @@
 
 *[Versión en español](README.md)* — the code, UI and docs are in Spanish; this page summarizes them.
 
-A local control panel for your Mac that shows, with a traffic-light status, **everything you have running**
+A local control panel for your computer (macOS, and Windows in beta) that shows, with a traffic-light status, **everything you have running**
 — your own services, AI agents, mockups, dev servers, monitors — and gives you buttons to start, stop,
 approve what asks for approval, or open its log. One standard-library Python file, one HTML page and a folder
 of JSON "cards". No dependencies, no accounts, no network: it listens on `127.0.0.1` only.
