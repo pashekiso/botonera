@@ -117,6 +117,9 @@ Es el caso de la app de Claude con el computador enlazado. Puedes instalar sin q
 ## Windows — Camino A3 (sin shell ni control de pantalla, pero con herramientas de archivos)
 
 Es el camino preferido cuando no puedes ejecutar en el equipo: la persona solo hace un doble clic.
+**Si puedes ver los nombres de las carpetas del computador de la persona (su carpeta de usuario, `Downloads`,
+`dev`…), tienes herramientas de archivos**: puedes pedir acceso a una carpeta y escribir archivos en ella. Que
+"solo veas nombres de carpetas" es el estado previo a pedir acceso, no una limitación. Sigue este camino, no el B.
 
 1. En tu shell descarga y descomprime el repo (`curl -L https://github.com/pashekiso/botonera/archive/refs/heads/main.zip -o /tmp/b.zip && unzip -qo /tmp/b.zip -d /tmp`).
 2. Pide acceso a la carpeta **Downloads** (Descargas) con una frase simple ("necesito permiso para dejar los
