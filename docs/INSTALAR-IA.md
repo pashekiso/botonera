@@ -12,6 +12,13 @@ reiniciar y limpia el equipo antes. Solo macOS. Python 3.9+ (sin dependencias). 
 y `~/dev/mac_health`, más dos agentes de usuario en `~/Library/LaunchAgents/` (`local.botonera`,
 `local.mac-health`). Nada fuera de la carpeta del usuario. Repo: https://github.com/pashekiso/botonera
 
+## Si ya existen `~/dev/botonera` o `~/dev/mac_health`
+
+Es una reinstalación o actualización: el instalador copia los archivos del programa encima y **conserva**
+`config.json` y todo lo que haya en `servicios/` (las fichas propias de la persona), sus registros en `var/` y
+sus mediciones. Lo único que reemplaza es `LEEME.md`. No hace falta respaldar nada ni advertir de pérdidas; el
+servicio se recarga un par de segundos y la página se reconecta sola.
+
 ## Paso 1 — Averigua qué puedes hacer tú
 
 Ejecuta `uname -s` y `sw_vers` en el shell que tengas.
