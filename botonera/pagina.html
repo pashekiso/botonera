@@ -56,6 +56,22 @@ h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .6px; color: va
   background: var(--aviso-fondo); color: var(--aviso-texto); }
 .tile.pulso .punto { animation: pulso 1.6s ease-in-out infinite; }
 @keyframes pulso { 0%,100% { opacity: 1 } 50% { opacity: .35 } }
+.progreso { margin-top: 2px; }
+.progreso .barra-p { height: 6px; border-radius: 999px; background: var(--boton); overflow: hidden; position: relative; }
+.progreso .barra-p > span { display: block; height: 100%; background: var(--acento); border-radius: 999px; transition: width .6s;
+  background-image: linear-gradient(45deg, rgba(255,255,255,.25) 25%, transparent 25%, transparent 50%, rgba(255,255,255,.25) 50%, rgba(255,255,255,.25) 75%, transparent 75%);
+  background-size: 18px 18px; animation: rayas 1s linear infinite; }
+.progreso .barra-p.indef > span { width: 35% !important; animation: rayas 1s linear infinite, vaiven 1.4s ease-in-out infinite; }
+@keyframes rayas { to { background-position: 18px 0 } }
+@keyframes vaiven { 0%,100% { margin-left: 0 } 50% { margin-left: 65% } }
+.progreso .texto { display: flex; align-items: center; gap: 8px; font-size: 12.5px; margin-top: 6px; color: var(--tenue); }
+.spinner { width: 12px; height: 12px; border: 2px solid var(--borde); border-top-color: var(--acento); border-radius: 50%; animation: girar .8s linear infinite; flex: none; }
+@keyframes girar { to { transform: rotate(360deg) } }
+.tile .mini { height: 3px; border-radius: 999px; background: var(--boton); overflow: hidden; margin-top: 4px; }
+.tile .mini > span { display: block; height: 100%; background: var(--acento); animation: rayas 1s linear infinite;
+  background-image: linear-gradient(45deg, rgba(255,255,255,.3) 25%, transparent 25%, transparent 50%, rgba(255,255,255,.3) 50%, rgba(255,255,255,.3) 75%, transparent 75%); background-size: 12px 12px; }
+button.inactivo { opacity: .45; cursor: not-allowed; }
+.motivos { font-size: 11.5px; color: var(--tenue); }
 .punto { width: 11px; height: 11px; border-radius: 50%; flex: none; }
 .verde { background: var(--verde); box-shadow: 0 0 0 3px color-mix(in srgb, var(--verde) 18%, transparent); }
 .amarillo { background: var(--amarillo); box-shadow: 0 0 0 3px color-mix(in srgb, var(--amarillo) 22%, transparent); }
@@ -213,12 +229,15 @@ async function accion(id, nombre, valores, etiqueta) {
 function tileServicio(s) {
   const t = s.tarjeta || {semaforo: 'gris', subtitulo: 'Leyendo…', atencion: []};
   const n = (t.atencion || []).length;
-  const enCurso = /en curso|iniciando|ejecutando/i.test(t.subtitulo || '');
+  const pr = t.progreso && typeof t.progreso === 'object' ? t.progreso : null;
+  const enCurso = !!pr || /en curso|iniciando|ejecutando/i.test(t.subtitulo || '');
+  const pct = pr && pr.total ? Math.max(3, Math.round(100 * (pr.paso || 0) / pr.total)) : null;
   return `<button class="tile s-${esc(t.semaforo)} ${enCurso ? 'pulso' : ''}" data-tipo="servicio" data-clave="${esc(s.id)}"
       title="${esc(NOMBRES_SEM[t.semaforo] || '')}">
     <span class="cab"><span class="punto ${esc(t.semaforo)}"></span><span class="nombre">${esc(s.nombre || t.titulo)}</span>
       ${n ? `<span class="marca">${n} aviso${n > 1 ? 's' : ''}</span>` : ''}</span>
     <span class="sub">${esc(t.subtitulo || '')}</span>
+    ${pr ? `<span class="mini"><span style="width:${pct == null ? 100 : pct}%"></span></span>` : ''}
     <span class="tipo">${esc(s.tipo)}</span>
   </button>`;
 }
@@ -227,15 +246,24 @@ function detalleServicio(s) {
   const dl = (t.datos || []).filter(d => d.etiqueta !== 'Estado').map(d => `<dt>${esc(d.etiqueta)}</dt><dd>${esc(d.valor)}</dd>`).join('');
   const atencion = (t.atencion || []).length
     ? `<div class="atencion">${t.atencion.map(a => `<div>⚠︎ ${esc(a)}</div>`).join('')}</div>` : '';
-  const botones = (s.botones || []).map(b =>
-    `<button data-id="${esc(s.id)}" data-accion="${esc(b.accion)}" data-etiqueta="${esc(b.etiqueta)}" data-confirmar="${b.confirmar ? 1 : 0}" data-aviso="${esc(b.aviso || '')}">${esc(b.etiqueta)}</button>`).join('');
+  const off = (t.deshabilitar && typeof t.deshabilitar === 'object') ? t.deshabilitar : {};
+  const botones = (s.botones || []).map(b => off[b.accion] !== undefined
+    ? `<button class="inactivo" disabled title="${esc(off[b.accion] || 'no disponible ahora')}">${esc(b.etiqueta)}</button>`
+    : `<button data-id="${esc(s.id)}" data-accion="${esc(b.accion)}" data-etiqueta="${esc(b.etiqueta)}" data-confirmar="${b.confirmar ? 1 : 0}" data-aviso="${esc(b.aviso || '')}">${esc(b.etiqueta)}</button>`).join('');
+  const motivos = (s.botones || []).filter(b => off[b.accion]).map(b => `${esc(b.etiqueta)}: ${esc(off[b.accion])}`).join(' · ');
+  const pr = t.progreso && typeof t.progreso === 'object' ? t.progreso : null;
+  const pct = pr && pr.total ? Math.max(3, Math.round(100 * (pr.paso || 0) / pr.total)) : null;
+  const progreso = pr ? `<div class="progreso"><div class="barra-p ${pct == null ? 'indef' : ''}"><span style="width:${pct == null ? 35 : pct}%"></span></div>
+      <div class="texto"><span class="spinner"></span><span>${pr.total ? `paso ${esc(pr.paso)} de ${esc(pr.total)} · ` : ''}${esc(pr.texto || 'en curso…')}${pr.desde ? ` · ${esc(pr.desde)}` : ''}</span></div></div>` : '';
   return {
     semaforo: t.semaforo, titulo: s.nombre || t.titulo, tipo: s.tipo,
     html: `<div class="det-sub">${esc(t.subtitulo || '')}</div>
       ${s.descripcion ? `<div class="det-desc">${esc(s.descripcion)}</div>` : ''}
+      ${progreso}
       ${dl ? `<dl>${dl}</dl>` : ''}
       ${atencion}
       <div class="botones">${botones || '<span class="pie">Esta ficha no define acciones.</span>'}</div>
+      ${motivos ? `<div class="motivos">${motivos}</div>` : ''}
       <div class="pie">actualizado ${esc(s.actualizado)}</div>`
   };
 }

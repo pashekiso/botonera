@@ -399,15 +399,23 @@ def tarjeta():
         for m in d.get("motivos_rojo", []) + d.get("motivos_amarillo", []):
             atencion.append(m)
 
+    progreso = None
+    deshabilitar = {"reiniciar_ahora": "primero pulsa Preparar reinicio: deja el equipo limpio antes de reiniciar"}
     if mant.get("estado") == "en_curso":
         sem = "amarillo"
         sub = "Mantención en curso: paso %s/%s · %s" % (mant.get("paso_n"), mant.get("total"), mant.get("paso"))
+        progreso = {"paso": mant.get("paso_n"), "total": mant.get("total"), "texto": mant.get("paso") or "iniciando…",
+                    "desde": hace(time.time() - mant["inicio"]) if mant.get("inicio") else None}
+        deshabilitar = {"preparar_reinicio": "ya hay una mantención en curso",
+                        "reiniciar_ahora": "se habilita cuando termine la mantención",
+                        "medir_ahora": "espera a que termine la mantención"}
         if mant.get("inicio") and time.time() - mant["inicio"] > 1200:
             atencion.append("La mantención lleva más de 20 min: revisa el registro; puede haber una app esperando confirmación")
     elif mant.get("estado") == "listo" and mant.get("fin"):
         reiniciado = d.get("boottime") and d["boottime"] > mant["fin"]
         if not reiniciado and time.time() - mant["fin"] < 6 * 3600:
             sub = "Listo para reiniciar (mantención %s, liberó %s MB)" % (hace(time.time() - mant["fin"]), mant.get("liberado_mb", "?"))
+            deshabilitar = {}
             for p in mant.get("pendientes", []):
                 atencion.append(p)
         datos.append({"etiqueta": "Última mantención", "valor": "%s · %d pasos, %d con problemas" % (
@@ -417,7 +425,7 @@ def tarjeta():
 
     print(json.dumps({"servicio": "mac_health", "corriendo": True, "crudo": {"estado": d, "mantencion": mant},
                       "tarjeta": {"semaforo": sem, "titulo": "OSHealth", "subtitulo": sub, "datos": datos,
-                                  "atencion": atencion}}, ensure_ascii=False))
+                                  "atencion": atencion, "progreso": progreso, "deshabilitar": deshabilitar}}, ensure_ascii=False))
 
 
 # --------------------------------------------------------------------------- mantención previa al reinicio
@@ -699,7 +707,7 @@ def ficha():
         "descripcion": "Mide cada hora memoria, swap, presión, carga, disco y servidores locales; recomienda reiniciar y prepara el equipo para que vuelva limpio.",
         "carpeta": str(BASE),
         "documentacion": str(BASE / "LEEME.md"),
-        "tarjeta": {"cmd": yo + ["tarjeta"], "campo": "tarjeta", "cada_segundos": 20},
+        "tarjeta": {"cmd": yo + ["tarjeta"], "campo": "tarjeta", "cada_segundos": 5},
         "acciones": {
             "estado": {"cmd": yo + ["tarjeta"], "salida": "json"},
             "medir_ahora": {"cmd": yo + ["medir", "--json"], "salida": "json", "nota": "lectura inmediata; tarda unos segundos (du de Caches)"},

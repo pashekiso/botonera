@@ -56,6 +56,8 @@ Las rutas van **absolutas** (la Botonera no expande `~` dentro de `cmd`). Cualqu
 | `subtitulo` | una línea bajo el nombre (2 líneas máx. en la compacta); si contiene "en curso", "iniciando" o "ejecutando", el punto parpadea |
 | `datos[]` | pares etiqueta/valor ya formateados, en el detalle; una etiqueta `Estado` se omite (ya está en el subtítulo) |
 | `atencion[]` | frases que piden acción; su cantidad aparece como marca "N avisos" en la compacta |
+| `progreso` | opcional, `{"paso": 4, "total": 13, "texto": "Vaciar cachés", "desde": "hace 1 min"}`: barra animada y spinner en el detalle, mini barra y punto pulsante en la compacta. Sin `total` la barra es indefinida. Úsalo en toda acción que corra en segundo plano, para que se vea que algo pasa |
+| `deshabilitar` | opcional, `{"accion": "motivo"}`: esos botones se muestran grises con el motivo (p. ej. "Reiniciar ahora" hasta que termine la mantención). Es la tarjeta la que decide, así el estado y los botones vienen de la misma fuente |
 
 Significado sugerido: verde corriendo · amarillo requiere atención · rojo con problemas · gris detenido.
 Si el comando falla o no imprime JSON, la tarjeta sale roja con el texto del error.
