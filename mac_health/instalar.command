@@ -6,5 +6,5 @@ PY="/opt/homebrew/opt/python@3.13/bin/python3.13"
 [ -x "$PY" ] || PY="$(command -v python3)"
 "$PY" "$(pwd)/mac_health.py" instalar
 echo
-echo "Listo. Abre la Botonera (~/dev/botonera/iniciar_botonera.command): la tarjeta 'Salud del Mac' aparece en la próxima actualización."
+echo "Listo. Abre la Botonera (~/dev/botonera/iniciar_botonera.command): la tarjeta 'OSHealth' aparece en la próxima actualización."
 read -r -p "Enter para cerrar…" _

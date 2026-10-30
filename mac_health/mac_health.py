@@ -399,7 +399,7 @@ def tarjeta():
         atencion.append("La última mantención terminó con error: " + str(mant.get("error", ""))[:200])
 
     print(json.dumps({"servicio": "mac_health", "corriendo": True, "crudo": {"estado": d, "mantencion": mant},
-                      "tarjeta": {"semaforo": sem, "titulo": "Salud del Mac", "subtitulo": sub, "datos": datos,
+                      "tarjeta": {"semaforo": sem, "titulo": "OSHealth", "subtitulo": sub, "datos": datos,
                                   "atencion": atencion}}, ensure_ascii=False))
 
 
@@ -665,7 +665,7 @@ def ficha():
     return {
         "esquema": "botonera-servicio/1",
         "id": "mac_health",
-        "nombre": "Salud del Mac",
+        "nombre": "OSHealth",
         "tipo": "monitor",
         "descripcion": "Mide cada hora memoria, swap, presión, carga, disco y servidores locales; recomienda reiniciar y prepara el equipo para que vuelva limpio.",
         "carpeta": str(BASE),

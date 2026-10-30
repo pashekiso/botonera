@@ -1,4 +1,4 @@
-# mac_health — Salud del Mac
+# mac_health — OSHealth (salud del Mac)
 
 Mide cada hora el estado del MacBook, recomienda reiniciar cuando hay señales de degradación y, desde la
 Botonera, prepara el equipo para que el reinicio lo deje limpio. Un solo archivo de Python con biblioteca
@@ -11,8 +11,8 @@ bash ~/dev/mac_health/instalar.command
 ```
 
 Escribe `~/Library/LaunchAgents/local.mac-health.plist` (cada 3600 s y al iniciar sesión), deja la ficha
-`~/dev/botonera/servicios/mac_health.json` y, si existe `~/dev/cowork-local/` (o la carpeta que indique `COWORK_LOCAL`),
-crea ahí `mac_health/` con un espejo de solo lectura del estado para tu asistente de IA. Hace la primera medición al terminar. Para quitarlo: `python3 mac_health.py desinstalar`.
+`~/dev/botonera/servicios/mac_health.json` y crea `~/dev/cowork-local/mac_health/` (espejo de solo lectura
+para los Cowork). Hace la primera medición al terminar. Para quitarlo: `python3 mac_health.py desinstalar`.
 
 ## Qué mide y cómo decide
 
@@ -43,7 +43,7 @@ Los umbrales están en el dict `UMBRAL` al inicio de `mac_health.py`.
   4. Pide quit a las apps abiertas, excepto Finder, Terminal, iTerm2, Claude y navegadores. Las que
      queden abiertas (documentos sin guardar) se listan en la tarjeta.
   5. `brew cleanup -s --prune=all`, `npm cache clean --force`, `pip cache purge`, `uv cache clean`, DerivedData.
-  6. Vacía `~/Library/Caches` completo, protegiendo `ms-playwright` (navegadores de Playwright, pesados de volver a bajar).
+  6. Vacía `~/Library/Caches` completo, protegiendo `ms-playwright` (los navegadores de net_runner y web_gateway).
   7. Temporales del usuario (`DARWIN_USER_TEMP_DIR`) con más de 1 h.
   8. `~/Library/Logs` con más de 7 días.
   9. Papelera.
@@ -55,8 +55,8 @@ Los umbrales están en el dict `UMBRAL` al inicio de `mac_health.py`.
 - **Reiniciar ahora** (pide confirmación): `osascript … System Events restart`. Una app con cambios sin
   guardar puede detener el reinicio; la tarjeta ya te habrá avisado cuál.
 
-Los agentes de launchd (tus propios servicios) no se tocan: el reinicio los cierra y launchd los vuelve a
-levantar al iniciar sesión.
+Los gateways de launchd (net_runner, web_gateway, graph_gateway) no se tocan: el reinicio los cierra y
+launchd los vuelve a levantar al iniciar sesión.
 
 ## Permisos de macOS (primera vez)
 
@@ -74,7 +74,7 @@ Privacidad y seguridad.
 | Última medición / historial (200 lecturas) | `~/dev/mac_health/var/estado.json`, `var/historial.jsonl` |
 | Estado y registro de la mantención | `~/dev/mac_health/var/mantencion.json`, `var/mantencion.log` |
 | Salida del agente launchd | `~/dev/mac_health/var/launchd.log` |
-| Espejo para tu asistente de IA (opcional) | `$COWORK_LOCAL/mac_health/estado.json`, `historial.json`, `mantencion.json` |
+| Espejo para los Cowork (skill `mac-health`) | `~/dev/cowork-local/mac_health/estado.json`, `historial.json`, `mantencion.json` |
 | Ficha de la Botonera | `~/dev/botonera/servicios/mac_health.json` |
 | Agente launchd | `~/Library/LaunchAgents/local.mac-health.plist` |
 

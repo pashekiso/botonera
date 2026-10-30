@@ -52,7 +52,7 @@ Las rutas van **absolutas** (la Botonera no expande `~` dentro de `cmd`). Cualqu
 | Campo | Uso en la página |
 |---|---|
 | `semaforo` | color del punto; `rojo`/`amarillo` resaltan el borde de la tarjeta compacta |
-| `titulo` | nombre en la tarjeta compacta y en el detalle |
+| `titulo` | respaldo del nombre: en la página manda el `nombre` de la ficha (así renombras algo sin tocar su script) |
 | `subtitulo` | una línea bajo el nombre (2 líneas máx. en la compacta); si contiene "en curso", "iniciando" o "ejecutando", el punto parpadea |
 | `datos[]` | pares etiqueta/valor ya formateados, en el detalle; una etiqueta `Estado` se omite (ya está en el subtítulo) |
 | `atencion[]` | frases que piden acción; su cantidad aparece como marca "N avisos" en la compacta |
