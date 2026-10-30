@@ -353,7 +353,10 @@ def url():
 
 def servir(abrir):
     VAR.mkdir(parents=True, exist_ok=True)
-    if sys.stdout is None or (WIN and not sys.stdout.isatty()):
+    # Sin consola (pythonw, o lanzado por launchd/la carpeta Inicio): la salida va al registro. No se usa isatty():
+    # en Windows devuelve True para el dispositivo NUL.
+    sin_consola = sys.stdout is None or Path(sys.executable).name.lower() == "pythonw.exe" or "--log" in sys.argv
+    if sin_consola:
         _rotar_log()
         f = open(LOG, "a", encoding="utf-8", buffering=1)
         sys.stdout = sys.stderr = f
@@ -369,7 +372,7 @@ def servir(abrir):
     print("═" * 70)
     print(" Botonera  ·  %s" % url())
     print(" registro de fichas: %s" % CFG["registro"])
-    print(" Cierra esta ventana (o Ctrl+C) para detenerla." if sys.stdout.isatty() else (" tarea programada %s" % TAREA if WIN else " servicio launchd %s" % LABEL))
+    print((" inicio automático (carpeta Inicio)" if WIN else " servicio launchd %s" % LABEL) if sin_consola else " Cierra esta ventana (o Ctrl+C) para detenerla.")
     print("═" * 70, flush=True)
     for m in fichas():
         log("ficha: %s (%s)" % (m["id"], m.get("tipo", "servicio")))
@@ -427,7 +430,7 @@ def abrir_navegador():
         pass
 
 
-# ---- Windows: tarea programada al iniciar sesión (schtasks), sin ventana (pythonw) ----
+# ---- Windows: inicio automático por la carpeta Inicio, sin ventana (pythonw) ----
 def _pythonw():
     cand = Path(sys.executable).with_name("pythonw.exe")
     return str(cand if cand.exists() else sys.executable)
