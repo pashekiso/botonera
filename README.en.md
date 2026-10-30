@@ -23,7 +23,8 @@ close it with a click. Anything — hand-made or built by your AI assistant — 
 | `docs/CONTRATO.md` | The card/tile contract (what anyone plugging something in needs to know) |
 | `docs/CONECTAR.md` | Recipes to connect your own solutions |
 | `docs/PROMPT-IA.md` | Ready-made prompt so your AI assistant connects something, or rebuilds the panel on your stack |
-| `docs/SIN-CODIGO.md` | For non-programmers: a prompt so their AI assistant installs it, and what to expect (Spanish) |
+| `docs/SIN-CODIGO.md` | For non-programmers: a two-line prompt and what to expect (Spanish) |
+| `docs/INSTALAR-IA.md` | Instructions written for the AI assistant: how to install it or guide the person (Spanish) |
 
 ## Install
 

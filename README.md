@@ -26,7 +26,8 @@ un JSON de pocas líneas.
 | `docs/CONTRATO.md` | El contrato de ficha y tarjeta (lo que necesita saber quien conecte algo) |
 | `docs/CONECTAR.md` | Recetas para sumar tus propias soluciones |
 | `docs/PROMPT-IA.md` | Prompt listo para que tu asistente de IA conecte algo, o replique el panel en tu stack |
-| `docs/SIN-CODIGO.md` | Para quien no programa: prompt para que su asistente de IA la instale, y qué esperar |
+| `docs/SIN-CODIGO.md` | Para quien no programa: un prompt de dos líneas y qué esperar |
+| `docs/INSTALAR-IA.md` | Instrucciones escritas para el asistente de IA: cómo instalarla o guiar a la persona |
 
 ## Instalar
 

@@ -8,23 +8,13 @@ podrá dictarte los pasos.
 ## El prompt (cópialo tal cual)
 
 ```
-Quiero instalar la Botonera (https://github.com/pashekiso/botonera) en este Mac. Es un panel local que
-muestra todo lo que está corriendo en mi computador con un semáforo y botones. No sé programar: hazlo tú
-y explícame solo lo que yo tenga que hacer con el mouse.
-
-1. Descarga https://github.com/pashekiso/botonera/archive/refs/heads/main.zip y descomprímelo en
-   ~/Downloads/botonera (si ya existe, reemplázalo).
-2. Lee README.md para entender qué hace y no me preguntes nada que esté respondido ahí.
-3. Si puedes ejecutar comandos directamente en macOS, corre:
-   bash ~/Downloads/botonera/instalar.command
-   Si NO puedes ejecutar comandos en macOS (por ejemplo, si tu shell corre en una máquina virtual),
-   dime que abra la app Terminal (Cmd+Espacio, "Terminal") y pegue esta línea, sin cambiarla:
-   curl -L https://github.com/pashekiso/botonera/archive/refs/heads/main.zip -o /tmp/botonera.zip && rm -rf ~/Downloads/botonera-main && unzip -qo /tmp/botonera.zip -d ~/Downloads && bash ~/Downloads/botonera-main/instalar.command
-4. Si macOS pide instalar "herramientas de línea de comandos" o dice que el archivo "no se puede abrir
-   porque es de un desarrollador no identificado", explícame cómo resolverlo (Aceptar en el primer caso;
-   clic derecho → Abrir en el segundo).
-5. Cuando esté instalada, dime qué voy a ver en http://127.0.0.1:8790/ y qué significa cada color.
+Quiero instalar una webapp local en este Mac con la menor intervención posible de mi parte. Sigue las
+instrucciones de https://github.com/pashekiso/botonera/blob/main/docs/INSTALAR-IA.md y, si no puedes
+instalarla tú, dame el paso a paso más sencillo según lo que tenga mi máquina.
 ```
+
+Eso es todo. Las instrucciones largas están en ese archivo, escritas para la IA: cómo saber si puede instalar
+por ti, qué hacer si no, los avisos típicos de macOS y qué contarte al final.
 
 ## Lo que va a pasar
 
