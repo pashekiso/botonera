@@ -242,13 +242,21 @@ function detalleServicio(s) {
 
 /* ---------- mosaico: servicios web locales ---------- */
 function claveWeb(w) { return w.pid + '-' + w.puerto; }
-function tituloWeb(w) { return w.titulo || (w.web ? 'Sin título' : 'Puerto ' + w.puerto + ' (no responde HTTP)'); }
+function nombreCarpeta(w) {
+  // Sin <title>: el último tramo (o los dos últimos, si el último es genérico) de la carpeta desde donde se lanzó.
+  const partes = String(w.carpeta || '').replace(/\/+$/, '').split('/').filter(Boolean);
+  if (!partes.length) return '';
+  const ult = partes[partes.length - 1];
+  return (/^(src|app|dist|build|public|web|server|api|frontend|backend|\.)$/i.test(ult) && partes.length > 1) ? partes.slice(-2).join('/') : ult;
+}
+function tituloWeb(w) { return w.titulo || nombreCarpeta(w) || (w.web ? 'Puerto ' + w.puerto : 'Puerto ' + w.puerto + ' (no responde HTTP)'); }
+function origenWeb(w) { return w.titulo ? '' : (nombreCarpeta(w) ? ' · por carpeta' : ' · sin título'); }
 function tileWeb(w) {
   return `<button class="tile" data-tipo="web" data-clave="${esc(claveWeb(w))}" title="${esc(w.url || '')}">
     <span class="cab"><span class="punto ${w.web ? 'verde' : 'gris'}"></span><span class="nombre">${esc(tituloWeb(w))}</span>
       ${w.expuesto ? '<span class="marca" title="otros equipos de tu red pueden abrirlo">en red</span>' : ''}</span>
     <span class="sub">:${esc(w.puerto)} · ${esc(w.proceso)} · ${esc(w.activo)}</span>
-    <span class="tipo">${w.es_botonera ? 'esta botonera' : w.es_app ? 'app / sistema' : 'web local'}</span>
+    <span class="tipo">${w.es_botonera ? 'esta botonera' : w.es_app ? 'app / sistema' : 'web local' + origenWeb(w)}</span>
   </button>`;
 }
 function detalleWeb(w) {
