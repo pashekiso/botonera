@@ -2,7 +2,7 @@
 
 (Mac, y Windows en beta: el mismo prompt sirve; en Windows el panel arranca desde la carpeta Inicio y OSHealth como tarea programada.)
 
-No necesitas saber Python ni usar git. Necesitas una cosa: que tu asistente de IA **pueda actuar en tu Mac**,
+No necesitas saber Python ni usar git. Necesitas una cosa: que tu asistente de IA **pueda actuar en tu computador**,
 no solo chatear. Sirven, por ejemplo: Claude (app de escritorio con el computador enlazado, o Claude Code),
 Codex CLI, Cursor o Windsurf en modo agente, Copilot CLI. Un chat de navegador sin acceso a tu computador solo
 podrá dictarte los pasos.
@@ -15,8 +15,9 @@ instrucciones de https://github.com/pashekiso/botonera/blob/main/docs/INSTALAR-I
 instalarla tú, dame el paso a paso más sencillo según lo que tenga mi máquina.
 ```
 
-Eso es todo. Las instrucciones largas están en ese archivo, escritas para la IA: cómo saber si puede instalar
-por ti, qué hacer si no, los avisos típicos de macOS y qué contarte al final.
+Eso es todo. Las instrucciones largas están en ese archivo, escritas para la IA: cómo saber si tu computador es Mac
+o Windows y si puede instalar por ti, qué hacer si no, los avisos típicos de cada sistema y qué contarte al final.
+Si tu asistente no te pregunta ni dice qué sistema tienes, dile "es Windows" (o "es Mac") y sigue.
 
 ## Lo que va a pasar
 
