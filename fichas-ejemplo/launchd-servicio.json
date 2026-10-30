@@ -1,0 +1,21 @@
+{
+ "esquema": "botonera-servicio/1",
+ "id": "mi_api",
+ "nombre": "Mi API",
+ "tipo": "servicio",
+ "descripcion": "API local que corre bajo launchd. Ejemplo: copia botonera/estados/ejemplo_launchd.py como estados/mi_api.py y ajusta CONFIG.",
+ "carpeta": "/Users/TU_USUARIO/dev/mi_api",
+ "tarjeta": {
+  "cmd": ["/usr/bin/python3", "/Users/TU_USUARIO/dev/botonera/estados/mi_api.py", "estado"],
+  "campo": "tarjeta",
+  "cada_segundos": 10
+ },
+ "acciones": {
+  "estado":    {"cmd": ["/usr/bin/python3", "/Users/TU_USUARIO/dev/botonera/estados/mi_api.py", "estado"], "salida": "json"},
+  "iniciar":   {"cmd": ["/usr/bin/python3", "/Users/TU_USUARIO/dev/botonera/estados/mi_api.py", "iniciar"], "salida": "json"},
+  "reiniciar": {"cmd": ["/usr/bin/python3", "/Users/TU_USUARIO/dev/botonera/estados/mi_api.py", "reiniciar"], "salida": "json"},
+  "detener":   {"cmd": ["/usr/bin/python3", "/Users/TU_USUARIO/dev/botonera/estados/mi_api.py", "detener"], "salida": "json", "confirmar": true},
+  "ver_log":   {"cmd": ["/usr/bin/python3", "/Users/TU_USUARIO/dev/botonera/estados/mi_api.py", "ver_log"], "salida": "json"}
+ },
+ "archivos": {"log": "/Users/TU_USUARIO/dev/mi_api/servicio.log"}
+}

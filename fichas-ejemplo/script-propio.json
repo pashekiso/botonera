@@ -1,0 +1,28 @@
+{
+ "esquema": "botonera-servicio/1",
+ "id": "mi_bot",
+ "nombre": "Mi bot",
+ "tipo": "servicio",
+ "descripcion": "Un proceso propio con su CLI. La Botonera no sabe nada de él: solo ejecuta los comandos declarados y lee el JSON que devuelven.",
+ "carpeta": "/Users/TU_USUARIO/dev/mi_bot",
+ "tarjeta": {
+  "cmd": ["/Users/TU_USUARIO/dev/mi_bot/.venv/bin/python", "/Users/TU_USUARIO/dev/mi_bot/ctl.py", "estado", "--json"],
+  "campo": "tarjeta",
+  "cada_segundos": 5
+ },
+ "acciones": {
+  "estado":  {"cmd": ["/Users/TU_USUARIO/dev/mi_bot/.venv/bin/python", "/Users/TU_USUARIO/dev/mi_bot/ctl.py", "estado", "--json"], "salida": "json", "campo_ok": "corriendo"},
+  "iniciar": {"cmd": ["/Users/TU_USUARIO/dev/mi_bot/.venv/bin/python", "/Users/TU_USUARIO/dev/mi_bot/ctl.py", "iniciar"], "nota": "abre una Terminal con el proceso"},
+  "detener": {"cmd": ["/Users/TU_USUARIO/dev/mi_bot/.venv/bin/python", "/Users/TU_USUARIO/dev/mi_bot/ctl.py", "detener"]},
+  "ver_log": {"cmd": ["/usr/bin/open", "-a", "Console", "/Users/TU_USUARIO/dev/mi_bot/var/servicio.log"]},
+  "pendientes": {"cmd": ["/Users/TU_USUARIO/dev/mi_bot/.venv/bin/python", "/Users/TU_USUARIO/dev/mi_bot/ctl.py", "pendientes", "--json"], "salida": "json"},
+  "ver":      {"cmd": ["/Users/TU_USUARIO/dev/mi_bot/.venv/bin/python", "/Users/TU_USUARIO/dev/mi_bot/ctl.py", "ver", "{n}", "--json"], "salida": "json"},
+  "aprobar":  {"cmd": ["/Users/TU_USUARIO/dev/mi_bot/.venv/bin/python", "/Users/TU_USUARIO/dev/mi_bot/ctl.py", "aprobar", "{n}"], "salida": "json"},
+  "aprobar_riesgo_alto": {"cmd": ["/Users/TU_USUARIO/dev/mi_bot/.venv/bin/python", "/Users/TU_USUARIO/dev/mi_bot/ctl.py", "aprobar", "{n}", "--confirmo"], "salida": "json", "confirmar": true},
+  "rechazar": {"cmd": ["/Users/TU_USUARIO/dev/mi_bot/.venv/bin/python", "/Users/TU_USUARIO/dev/mi_bot/ctl.py", "rechazar", "{n}", "--motivo", "{motivo}"], "salida": "json"}
+ },
+ "archivos": {
+  "latido": "/Users/TU_USUARIO/dev/mi_bot/var/servicio.json",
+  "log": "/Users/TU_USUARIO/dev/mi_bot/var/servicio.log"
+ }
+}

@@ -1,0 +1,17 @@
+{
+ "esquema": "botonera-servicio/1",
+ "id": "maqueta_vite",
+ "nombre": "Maqueta (Vite)",
+ "tipo": "maqueta",
+ "descripcion": "Lo mínimo: una ficha sin script de estado propio. tarjeta.cmd es un one-liner que prueba si el puerto responde. (Los servidores web locales ya aparecen solos en la sección 'Servicios web locales'; esta ficha sirve cuando quieres un botón Iniciar.)",
+ "carpeta": "/Users/TU_USUARIO/dev/mi_maqueta",
+ "tarjeta": {
+  "cmd": ["/usr/bin/python3", "-c", "import json,socket\nok=socket.socket().connect_ex(('127.0.0.1',5173))==0\nprint(json.dumps({'tarjeta':{'semaforo':'verde' if ok else 'gris','titulo':'Maqueta (Vite)','subtitulo':'Corriendo en :5173' if ok else 'Detenida','datos':[],'atencion':[]}}))"],
+  "campo": "tarjeta",
+  "cada_segundos": 5
+ },
+ "acciones": {
+  "iniciar": {"cmd": ["/usr/bin/open", "-a", "Terminal", "/Users/TU_USUARIO/dev/mi_maqueta/iniciar.command"], "nota": "iniciar.command: cd a la carpeta y npm run dev"},
+  "abrir":   {"cmd": ["/usr/bin/open", "http://127.0.0.1:5173/"]}
+ }
+}

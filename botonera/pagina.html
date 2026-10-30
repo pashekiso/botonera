@@ -1,0 +1,464 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="botonera-token" content="{{TOKEN}}">
+<title>Botonera</title>
+<style>
+:root {
+  --fondo: #f4f5f7; --panel: #ffffff; --texto: #1d2129; --tenue: #667085; --borde: #e3e6ea;
+  --verde: #12a150; --amarillo: #d99a00; --rojo: #d92d20; --gris: #98a2b3;
+  --aviso-fondo: #fff7e0; --aviso-texto: #7a5300; --rojo-fondo: #fde8e6; --rojo-texto: #8f1d14;
+  --boton: #eef0f3; --boton-hover: #e2e5ea; --acento: #2457d6;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --fondo: #111317; --panel: #1a1d23; --texto: #e7e9ee; --tenue: #98a0ad; --borde: #2a2f38;
+    --aviso-fondo: #33290f; --aviso-texto: #f2cf75; --rojo-fondo: #3a1714; --rojo-texto: #ffb4ab;
+    --boton: #262a32; --boton-hover: #2f343e; --acento: #7aa2ff;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--fondo); color: var(--texto);
+  font: 14px/1.45 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif; }
+header { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; padding: 14px 24px;
+  border-bottom: 1px solid var(--borde); background: var(--panel); position: sticky; top: 0; z-index: 2; }
+h1 { font-size: 18px; margin: 0; letter-spacing: .2px; }
+.resumen { display: flex; gap: 8px; flex-wrap: wrap; }
+.chip { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px;
+  background: var(--boton); font-size: 12px; color: var(--tenue); }
+.hora { margin-left: auto; color: var(--tenue); font-size: 12px; }
+.conexion { color: var(--rojo); font-weight: 600; font-size: 12px; display: none; }
+main { padding: 20px 24px 40px; max-width: 1400px; margin: 0 auto; }
+h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .6px; color: var(--tenue); margin: 6px 0 12px; }
+.barra { display: flex; align-items: center; gap: 12px; margin: 6px 0 12px; flex-wrap: wrap; }
+.barra h2 { margin: 0; }
+.barra label { color: var(--tenue); font-size: 12px; display: flex; gap: 6px; align-items: center; cursor: pointer; }
+.pie { color: var(--tenue); font-size: 11px; }
+
+/* ---- mosaico ---- */
+.mosaico { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; margin-bottom: 26px; }
+.tile { position: relative; text-align: left; background: var(--panel); border: 1px solid var(--borde); border-radius: 12px;
+  padding: 12px 12px 10px; cursor: pointer; display: flex; flex-direction: column; gap: 4px; min-height: 96px;
+  font: inherit; color: inherit; transition: transform .08s, box-shadow .12s, border-color .12s; }
+.tile:hover, .tile:focus-visible { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(0,0,0,.10); border-color: var(--acento); outline: none; }
+.tile.s-rojo { border-color: color-mix(in srgb, var(--rojo) 55%, var(--borde)); }
+.tile.s-amarillo { border-color: color-mix(in srgb, var(--amarillo) 55%, var(--borde)); }
+.tile .cab { display: flex; align-items: center; gap: 8px; }
+.tile .nombre { font-weight: 650; font-size: 13.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tile .sub { font-size: 12px; color: var(--tenue); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.tile .tipo { margin-top: auto; font-size: 10px; color: var(--tenue); text-transform: uppercase; letter-spacing: .4px; }
+.tile .nombre { flex: 1; min-width: 0; }
+.tile .marca { flex: none; font-size: 10px; padding: 1px 6px; border-radius: 6px; white-space: nowrap;
+  background: var(--aviso-fondo); color: var(--aviso-texto); }
+.tile.pulso .punto { animation: pulso 1.6s ease-in-out infinite; }
+@keyframes pulso { 0%,100% { opacity: 1 } 50% { opacity: .35 } }
+.punto { width: 11px; height: 11px; border-radius: 50%; flex: none; }
+.verde { background: var(--verde); box-shadow: 0 0 0 3px color-mix(in srgb, var(--verde) 18%, transparent); }
+.amarillo { background: var(--amarillo); box-shadow: 0 0 0 3px color-mix(in srgb, var(--amarillo) 22%, transparent); }
+.rojo { background: var(--rojo); box-shadow: 0 0 0 3px color-mix(in srgb, var(--rojo) 22%, transparent); }
+.gris { background: var(--gris); }
+.vacio { color: var(--tenue); padding: 20px; text-align: center; border: 1px dashed var(--borde); border-radius: 12px; grid-column: 1 / -1; }
+
+/* ---- detalle (panel lateral) ---- */
+dialog.detalle { border: none; border-left: 1px solid var(--borde); border-radius: 0; background: var(--panel); color: var(--texto);
+  width: min(560px, 100vw); max-width: 100vw; height: 100vh; max-height: 100vh; margin: 0 0 0 auto; padding: 0;
+  box-shadow: -12px 0 40px rgba(0,0,0,.18); }
+dialog::backdrop { background: rgba(0,0,0,.35); }
+.det-cab { display: flex; align-items: center; gap: 10px; padding: 14px 18px; border-bottom: 1px solid var(--borde);
+  position: sticky; top: 0; background: var(--panel); z-index: 1; }
+.det-cab .titulo { font-weight: 700; font-size: 16px; }
+.det-cab .tipo { font-size: 11px; color: var(--tenue); border: 1px solid var(--borde); border-radius: 6px; padding: 1px 7px; text-transform: uppercase; }
+.det-cuerpo { padding: 14px 18px 28px; display: flex; flex-direction: column; gap: 12px; overflow: auto; height: calc(100vh - 56px); }
+.det-sub { font-size: 14px; }
+.det-desc { color: var(--tenue); font-size: 12.5px; }
+dl { display: grid; grid-template-columns: max-content 1fr; gap: 5px 14px; margin: 0; font-size: 13px; }
+dt { color: var(--tenue); }
+dd { margin: 0; overflow-wrap: anywhere; }
+.atencion { background: var(--aviso-fondo); color: var(--aviso-texto); border-radius: 8px; padding: 8px 10px; font-size: 13px; }
+.atencion div + div { margin-top: 4px; }
+.botones { display: flex; gap: 8px; flex-wrap: wrap; padding-top: 4px; }
+button { font: inherit; border: 1px solid var(--borde); background: var(--boton); color: var(--texto);
+  padding: 6px 12px; border-radius: 8px; cursor: pointer; }
+button:hover:not(:disabled) { background: var(--boton-hover); }
+button:disabled { opacity: .45; cursor: default; }
+button.primario { background: var(--acento); color: #fff; border-color: transparent; }
+button.peligro { background: var(--rojo); color: #fff; border-color: transparent; }
+button.cerrar { margin-left: auto; }
+.web-link { color: var(--acento); text-decoration: none; font-weight: 600; overflow-wrap: anywhere; }
+.web-link:hover { text-decoration: underline; }
+.mono { font: 12px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; overflow-wrap: anywhere; }
+.etiqueta { font-size: 11px; padding: 1px 7px; border-radius: 6px; border: 1px solid var(--borde); color: var(--tenue); }
+.etiqueta.alerta-red { border-color: var(--amarillo); color: var(--aviso-texto); background: var(--aviso-fondo); }
+.previa { width: 100%; height: 320px; border: 1px solid var(--borde); border-radius: 8px; background: #fff; }
+pre { background: var(--fondo); border: 1px solid var(--borde); border-radius: 8px; padding: 10px; overflow: auto;
+  font: 12px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; white-space: pre; }
+
+/* ---- aprobaciones pendientes (tarjetas completas: exigen acción) ---- */
+.grilla { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 16px; }
+.tarjeta { background: var(--panel); border: 1px solid var(--borde); border-radius: 12px; padding: 16px;
+  display: flex; flex-direction: column; gap: 10px; }
+.cabeza { display: flex; align-items: center; gap: 10px; }
+.titulo { font-weight: 650; font-size: 15px; }
+.sub { color: var(--tenue); }
+.pendiente { border-color: var(--amarillo); }
+.pendiente.alto { border: 2px solid var(--rojo); }
+.alerta { background: var(--rojo); color: #fff; border-radius: 10px; padding: 14px 16px; }
+.alerta .grande { font-size: 26px; font-weight: 800; letter-spacing: 3px; }
+.alerta .item { font-weight: 700; font-size: 15px; margin-top: 8px; text-transform: uppercase; }
+.alerta ul { margin: 4px 0 0 18px; padding: 0; font-size: 13px; }
+.avisos { color: var(--aviso-texto); background: var(--aviso-fondo); border-radius: 8px; padding: 8px 10px; font-size: 13px; }
+.avisos ul { margin: 4px 0 0 18px; padding: 0; }
+.riesgo { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 6px; margin-left: auto; color: #fff; }
+.r-bajo { background: var(--verde); } .r-medio { background: var(--amarillo); } .r-alto { background: var(--rojo); }
+input[type=text] { font: inherit; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--borde);
+  background: var(--panel); color: var(--texto); min-width: 0; flex: 1; }
+.fila { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
+#avisos-flotantes { position: fixed; right: 16px; bottom: 16px; display: flex; flex-direction: column; gap: 8px; z-index: 5; }
+.flotante { background: var(--panel); border: 1px solid var(--borde); border-left: 4px solid var(--acento);
+  padding: 10px 14px; border-radius: 8px; max-width: 420px; box-shadow: 0 6px 20px rgba(0,0,0,.15); font-size: 13px; }
+.flotante.mal { border-left-color: var(--rojo); }
+dialog.modal { border: 1px solid var(--borde); border-radius: 12px; background: var(--panel); color: var(--texto);
+  width: min(1000px, 94vw); max-height: 88vh; padding: 0; }
+.modal-cab { display: flex; align-items: center; padding: 12px 16px; border-bottom: 1px solid var(--borde); position: sticky; top: 0; background: var(--panel); }
+.modal-cuerpo { padding: 12px 16px; overflow: auto; }
+@media (max-width: 600px) { header, main { padding-left: 16px; padding-right: 16px; } .mosaico { grid-template-columns: repeat(2, 1fr); } }
+</style>
+</head>
+<body>
+<header>
+  <h1>Botonera</h1>
+  <div class="resumen" id="resumen"></div>
+  <span class="conexion" id="conexion">sin conexión con la botonera</span>
+  <span class="hora" id="hora"></span>
+</header>
+<main>
+  <section id="sec-pendientes" hidden>
+    <h2>Aprobaciones pendientes</h2>
+    <div class="grilla" id="pendientes" style="align-items:start"></div>
+    <div style="height:24px"></div>
+  </section>
+
+  <div class="barra"><h2>Servicios, monitores y pruebas</h2><span class="pie">clic en una tarjeta para ver el detalle y los controles</span></div>
+  <div class="mosaico" id="servicios"></div>
+
+  <div class="barra"><h2>Servicios web locales (maquetas abiertas)</h2>
+    <span class="pie" id="web-hora"></span>
+    <label><input type="checkbox" id="ver-otros"> mostrar apps del sistema y puertos que no son web <span id="n-otros"></span></label></div>
+  <div class="mosaico" id="web"></div>
+</main>
+<div id="avisos-flotantes"></div>
+
+<dialog class="detalle" id="detalle">
+  <div class="det-cab"><span class="punto gris" id="det-punto"></span><span class="titulo" id="det-titulo"></span>
+    <span class="tipo" id="det-tipo"></span><button class="cerrar" onclick="detalle.close()">Cerrar</button></div>
+  <div class="det-cuerpo" id="det-cuerpo"></div>
+</dialog>
+<dialog class="modal" id="modal">
+  <div class="modal-cab"><strong id="modal-titulo">Código</strong><button style="margin-left:auto" onclick="modal.close()">Cerrar</button></div>
+  <div class="modal-cuerpo" id="modal-cuerpo"></div>
+</dialog>
+
+<script>
+const TOKEN = document.querySelector('meta[name="botonera-token"]').content;
+const modal = document.getElementById('modal');
+const detalle = document.getElementById('detalle');
+const NOMBRES_SEM = {verde: 'corriendo', amarillo: 'requiere atención', rojo: 'con problemas', gris: 'detenido'};
+let clavePendientes = '';
+let ocupado = false;
+let datos = null, datosWeb = null;          // última respuesta de /api/estado y /api/puertos
+let abierto = null;                         // {tipo: 'servicio'|'web', clave}
+let firmaDetalle = '';
+const previas = new Set();
+
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function aviso(texto, mal) {
+  const d = document.createElement('div');
+  d.className = 'flotante' + (mal ? ' mal' : '');
+  d.textContent = texto;
+  document.getElementById('avisos-flotantes').appendChild(d);
+  setTimeout(() => d.remove(), mal ? 9000 : 5000);
+}
+async function api(ruta, opciones) {
+  const r = await fetch(ruta, Object.assign({headers: {'X-Botonera-Token': TOKEN, 'Content-Type': 'application/json'}}, opciones || {}));
+  const d = await r.json().catch(() => ({ok: false, mensaje: 'respuesta inválida'}));
+  if (r.status === 403) throw new Error(d.mensaje || 'no autorizado: recarga la página');
+  return d;
+}
+async function accion(id, nombre, valores, etiqueta) {
+  if (ocupado) return;
+  ocupado = true;
+  document.body.style.cursor = 'progress';
+  try {
+    const r = await api('/api/accion', {method: 'POST', body: JSON.stringify({id, accion: nombre, valores: valores || {}})});
+    const texto = r.mensaje || (r.ok ? 'listo' : (r.texto || 'falló'));
+    aviso(`${id} · ${etiqueta || nombre}: ${texto}`, !r.ok);
+  } catch (e) {
+    aviso(`${id} · ${etiqueta || nombre}: ${e.message}`, true);
+  } finally {
+    ocupado = false;
+    document.body.style.cursor = '';
+    setTimeout(refrescar, 600);
+  }
+}
+
+/* ---------- mosaico: servicios y monitores ---------- */
+function tileServicio(s) {
+  const t = s.tarjeta || {semaforo: 'gris', subtitulo: 'Leyendo…', atencion: []};
+  const n = (t.atencion || []).length;
+  const enCurso = /en curso|iniciando|ejecutando/i.test(t.subtitulo || '');
+  return `<button class="tile s-${esc(t.semaforo)} ${enCurso ? 'pulso' : ''}" data-tipo="servicio" data-clave="${esc(s.id)}"
+      title="${esc(NOMBRES_SEM[t.semaforo] || '')}">
+    <span class="cab"><span class="punto ${esc(t.semaforo)}"></span><span class="nombre">${esc(t.titulo || s.nombre)}</span>
+      ${n ? `<span class="marca">${n} aviso${n > 1 ? 's' : ''}</span>` : ''}</span>
+    <span class="sub">${esc(t.subtitulo || '')}</span>
+    <span class="tipo">${esc(s.tipo)}</span>
+  </button>`;
+}
+function detalleServicio(s) {
+  const t = s.tarjeta || {semaforo: 'gris', subtitulo: 'Leyendo…', datos: [], atencion: []};
+  const dl = (t.datos || []).filter(d => d.etiqueta !== 'Estado').map(d => `<dt>${esc(d.etiqueta)}</dt><dd>${esc(d.valor)}</dd>`).join('');
+  const atencion = (t.atencion || []).length
+    ? `<div class="atencion">${t.atencion.map(a => `<div>⚠︎ ${esc(a)}</div>`).join('')}</div>` : '';
+  const botones = (s.botones || []).map(b =>
+    `<button data-id="${esc(s.id)}" data-accion="${esc(b.accion)}" data-etiqueta="${esc(b.etiqueta)}" data-confirmar="${b.confirmar ? 1 : 0}">${esc(b.etiqueta)}</button>`).join('');
+  return {
+    semaforo: t.semaforo, titulo: t.titulo || s.nombre, tipo: s.tipo,
+    html: `<div class="det-sub">${esc(t.subtitulo || '')}</div>
+      ${s.descripcion ? `<div class="det-desc">${esc(s.descripcion)}</div>` : ''}
+      ${dl ? `<dl>${dl}</dl>` : ''}
+      ${atencion}
+      <div class="botones">${botones || '<span class="pie">Esta ficha no define acciones.</span>'}</div>
+      <div class="pie">actualizado ${esc(s.actualizado)}</div>`
+  };
+}
+
+/* ---------- mosaico: servicios web locales ---------- */
+function claveWeb(w) { return w.pid + '-' + w.puerto; }
+function tituloWeb(w) { return w.titulo || (w.web ? 'Sin título' : 'Puerto ' + w.puerto + ' (no responde HTTP)'); }
+function tileWeb(w) {
+  return `<button class="tile" data-tipo="web" data-clave="${esc(claveWeb(w))}" title="${esc(w.url || '')}">
+    <span class="cab"><span class="punto ${w.web ? 'verde' : 'gris'}"></span><span class="nombre">${esc(tituloWeb(w))}</span>
+      ${w.expuesto ? '<span class="marca" title="otros equipos de tu red pueden abrirlo">en red</span>' : ''}</span>
+    <span class="sub">:${esc(w.puerto)} · ${esc(w.proceso)} · ${esc(w.activo)}</span>
+    <span class="tipo">${w.es_botonera ? 'esta botonera' : w.es_app ? 'app / sistema' : 'web local'}</span>
+  </button>`;
+}
+function detalleWeb(w) {
+  const k = claveWeb(w);
+  const tags = [
+    w.web ? `<span class="etiqueta">HTTP ${esc(w.estado)}</span>` : '<span class="etiqueta">no web</span>',
+    w.expuesto ? '<span class="etiqueta alerta-red" title="Escucha en todas las interfaces: otros equipos de tu red pueden abrirlo">visible en tu red</span>'
+               : '<span class="etiqueta">solo este equipo</span>',
+    w.es_app ? '<span class="etiqueta">app / sistema</span>' : '',
+    w.es_botonera ? '<span class="etiqueta">esta botonera</span>' : ''].join(' ');
+  const puedeDetener = !w.es_app && !w.es_botonera;
+  return {
+    semaforo: w.web ? 'verde' : 'gris', titulo: tituloWeb(w), tipo: ':' + w.puerto,
+    html: `${w.web ? `<a class="web-link" href="${esc(w.url)}" target="_blank" rel="noopener">${esc(w.url)}</a>` : ''}
+      <div>${tags}</div>
+      <dl>
+        <dt>Proceso</dt><dd>${esc(w.proceso)} (pid ${esc(w.pid)})</dd>
+        <dt>Comando</dt><dd class="mono">${esc(w.comando)}</dd>
+        ${w.carpeta ? `<dt>Carpeta</dt><dd class="mono">${esc(w.carpeta)}</dd>` : ''}
+        <dt>Abierto hace</dt><dd>${esc(w.activo)}</dd>
+        ${w.servidor ? `<dt>Servidor</dt><dd>${esc(w.servidor)}</dd>` : ''}
+      </dl>
+      ${previas.has(k) && w.web ? `<iframe class="previa" src="${esc(w.url)}" loading="lazy" referrerpolicy="no-referrer"></iframe>` : ''}
+      <div class="botones">
+        ${w.web ? `<a href="${esc(w.url)}" target="_blank" rel="noopener"><button>Abrir</button></a>
+        <button data-web="previa" data-k="${k}">${previas.has(k) ? 'Ocultar vista previa' : 'Vista previa'}</button>` : ''}
+        ${puedeDetener ? `<button data-web="detener" data-pid="${esc(w.pid)}" data-puerto="${esc(w.puerto)}">Detener</button>` : ''}
+      </div>`
+  };
+}
+
+/* ---------- panel de detalle ---------- */
+function abrir(tipo, clave) {
+  abierto = {tipo, clave};
+  firmaDetalle = '';
+  pintarDetalle(true);
+  if (!detalle.open) detalle.showModal();
+}
+function pintarDetalle(forzar) {
+  if (!abierto || !detalle.open && !forzar) return;
+  let d = null;
+  if (abierto.tipo === 'servicio') {
+    const s = (datos || {servicios: []}).servicios.find(x => x.id === abierto.clave);
+    if (s) d = detalleServicio(s);
+  } else {
+    const w = ((datosWeb || {}).servicios || []).find(x => claveWeb(x) === abierto.clave);
+    if (w) d = detalleWeb(w);
+  }
+  if (!d) {
+    d = {semaforo: 'gris', titulo: abierto.clave, tipo: '', html: '<div class="vacio">Ya no está en la lista (se cerró o terminó).</div>'};
+  }
+  // Las vistas previas (iframe) no deben recargarse en cada refresco: solo repintar si cambió algo.
+  const firma = d.semaforo + '|' + d.titulo + '|' + d.html.replace(/actualizado \d\d:\d\d:\d\d|Abierto hace<\/dt><dd>[^<]*/g, '');
+  if (firma === firmaDetalle && !forzar) return;
+  firmaDetalle = firma;
+  const p = document.getElementById('det-punto');
+  p.className = 'punto ' + d.semaforo;
+  document.getElementById('det-titulo').textContent = d.titulo;
+  document.getElementById('det-tipo').textContent = d.tipo;
+  document.getElementById('det-cuerpo').innerHTML = d.html;
+}
+detalle.addEventListener('close', () => { abierto = null; });
+
+/* ---------- aprobaciones pendientes ---------- */
+function tarjetaPendiente(p) {
+  const alto = p.riesgo === 'alto';
+  const rojas = (p.alertas_rojas || []).map(a =>
+    `<div class="item">▶ ${esc(a.titulo)}</div><ul>${(a.detalle || []).slice(0, 6).map(d => `<li>${esc(d)}</li>`).join('')}</ul>`).join('');
+  const avisos = (p.avisos || []).length
+    ? `<div class="avisos"><strong>Avisos</strong><ul>${p.avisos.map(a => `<li>${esc(a.titulo)}${(a.detalle||[]).length ? ': ' + esc(a.detalle.slice(0,3).join(' · ')) : ''}</li>`).join('')}</ul></div>` : '';
+  const clave = esc(p.servicio + '-' + p.numero);
+  const aprobar = alto
+    ? `<div class="fila"><input type="text" id="conf-${clave}" placeholder="Escribe APROBAR para habilitar" autocomplete="off">
+         <button class="peligro" id="btn-${clave}" disabled data-pend="aprobar_riesgo_alto" data-id="${esc(p.servicio)}" data-n="${esc(p.numero)}">Aprobar riesgo alto</button></div>`
+    : `<button class="primario" data-pend="aprobar" data-id="${esc(p.servicio)}" data-n="${esc(p.numero)}">Aprobar</button>`;
+  return `<article class="tarjeta pendiente ${alto ? 'alto' : ''}">
+    <div class="cabeza"><span class="titulo">#${esc(p.numero)} ${esc(p.nombre)}</span>
+      <span class="riesgo r-${esc(p.riesgo)}">RIESGO ${esc(String(p.riesgo).toUpperCase())}</span></div>
+    <div class="sub">${esc(p.servicio_nombre)} · de: ${esc(p.solicitante || 'sin indicar')}</div>
+    ${alto ? `<div class="alerta"><div class="grande">⚠ ALERTA</div>${rojas}</div>` : ''}
+    <div>${esc(p.proposito)}</div>
+    <dl><dt>Se conectará a</dt><dd>${esc((p.dominios || []).join(', ') || '—')}</dd></dl>
+    ${avisos}
+    <div class="botones" style="flex-direction:column; align-items:stretch">
+      ${aprobar}
+      <div class="fila"><input type="text" id="mot-${clave}" placeholder="Motivo del rechazo (opcional)">
+        <button data-pend="rechazar" data-id="${esc(p.servicio)}" data-n="${esc(p.numero)}">Rechazar</button>
+        <button data-pend="ver" data-id="${esc(p.servicio)}" data-n="${esc(p.numero)}">Ver código</button></div>
+    </div>
+    ${alto ? '<div class="pie">Las solicitudes de riesgo alto se preguntan en cada ejecución.</div>' : ''}
+  </article>`;
+}
+async function verCodigo(id, n) {
+  try {
+    const r = await api(`/api/ver?id=${encodeURIComponent(id)}&n=${encodeURIComponent(n)}`);
+    const an = r.analisis || {}, m = an.manifiesto || {};
+    document.getElementById('modal-titulo').textContent = `#${n} ${m.nombre || ''} — riesgo ${an.riesgo || '?'}`;
+    const archivos = Object.entries(r.codigo || {}).map(([ruta, txt]) =>
+      `<h3 style="font-size:13px;margin:14px 0 6px">${esc(ruta)}</h3><pre>${esc(txt)}</pre>`).join('');
+    document.getElementById('modal-cuerpo').innerHTML =
+      `<p>${esc(m.proposito || '')}</p><dl><dt>Dominios</dt><dd>${esc((m.dominios || []).join(', '))}</dd>
+       <dt>Métodos</dt><dd>${esc((m.metodos || []).join(', '))}</dd>
+       <dt>Recursos</dt><dd><pre style="margin:0">${esc(JSON.stringify(m.recursos || {}, null, 1))}</pre></dd></dl>${archivos || '<p>Sin código.</p>'}`;
+    modal.showModal();
+  } catch (e) { aviso('Ver código: ' + e.message, true); }
+}
+
+/* ---------- clics ---------- */
+document.addEventListener('click', async ev => {
+  const tile = ev.target.closest('.tile');
+  if (tile) return abrir(tile.dataset.tipo, tile.dataset.clave);
+  const b = ev.target.closest('button');
+  if (!b || b.disabled) return;
+  if (b.dataset.accion) {
+    const et = b.dataset.etiqueta;
+    if (b.dataset.confirmar === '1' && !confirm(`¿${et} ${b.dataset.id}?`)) return;
+    return accion(b.dataset.id, b.dataset.accion, {}, et);
+  }
+  if (b.dataset.web === 'previa') {
+    const k = b.dataset.k;
+    previas.has(k) ? previas.delete(k) : previas.add(k);
+    return pintarDetalle(true);
+  }
+  if (b.dataset.web === 'detener') {
+    const pid = Number(b.dataset.pid), puerto = Number(b.dataset.puerto);
+    if (!confirm(`¿Detener el proceso ${pid} que sirve el puerto ${puerto}?`)) return;
+    let r = await api('/api/detener_puerto', {method: 'POST', body: JSON.stringify({pid, puerto})}).catch(e => ({ok: false, mensaje: e.message}));
+    if (!r.ok && r.sigue_vivo && confirm(r.mensaje + '\n\n¿Forzar el cierre (SIGKILL)?')) {
+      r = await api('/api/detener_puerto', {method: 'POST', body: JSON.stringify({pid, puerto, forzar: true})}).catch(e => ({ok: false, mensaje: e.message}));
+    }
+    aviso(`:${puerto} · ${r.mensaje || (r.ok ? 'detenido' : 'falló')}`, !r.ok);
+    return setTimeout(refrescarWeb, 500);
+  }
+  const tipo = b.dataset.pend;
+  if (!tipo) return;
+  const id = b.dataset.id, n = b.dataset.n, clave = id + '-' + n;
+  if (tipo === 'ver') return verCodigo(id, n);
+  if (tipo === 'rechazar') {
+    const motivo = (document.getElementById('mot-' + clave) || {}).value || '';
+    return accion(id, 'rechazar', {n, motivo: motivo || 'rechazado desde la botonera'}, `rechazar #${n}`);
+  }
+  if (tipo === 'aprobar') {
+    if (!confirm(`¿Aprobar la solicitud #${n}? Si la apruebas, las próximas ejecuciones del mismo script pasan sin preguntar.`)) return;
+    return accion(id, 'aprobar', {n}, `aprobar #${n}`);
+  }
+  if (tipo === 'aprobar_riesgo_alto') return accion(id, 'aprobar_riesgo_alto', {n}, `aprobar #${n} (riesgo alto)`);
+});
+document.addEventListener('input', ev => {
+  if (ev.target.id && ev.target.id.startsWith('conf-')) {
+    const btn = document.getElementById('btn-' + ev.target.id.slice(5));
+    if (btn) btn.disabled = ev.target.value.trim() !== 'APROBAR';
+  }
+});
+document.getElementById('ver-otros').addEventListener('change', () => pintarWeb(true));
+
+/* ---------- refresco ---------- */
+const ORDEN_SEM = {rojo: 0, amarillo: 1, verde: 2, gris: 3};
+let firmaWeb = '';
+function pintarWeb(forzar) {
+  if (!datosWeb) return;
+  const verOtros = document.getElementById('ver-otros').checked;
+  if (!datosWeb.ok) { document.getElementById('web').innerHTML = `<div class="vacio">${esc(datosWeb.mensaje)}</div>`; return; }
+  const todos = datosWeb.servicios;
+  const principal = w => w.web && !w.es_app && !w.es_botonera;
+  const visibles = todos.filter(w => verOtros || principal(w));
+  document.getElementById('n-otros').textContent = '(' + todos.filter(w => !principal(w)).length + ')';
+  document.getElementById('web-hora').textContent = 'revisado ' + datosWeb.t;
+  const firma = verOtros + '|' + visibles.map(w => claveWeb(w) + w.titulo + w.estado + w.expuesto + w.activo).join(',');
+  if (firma !== firmaWeb || forzar) {
+    firmaWeb = firma;
+    document.getElementById('web').innerHTML = visibles.length ? visibles.map(tileWeb).join('')
+      : '<div class="vacio">No hay servicios web locales abiertos.</div>';
+  }
+  if (abierto && abierto.tipo === 'web') pintarDetalle(false);
+}
+async function refrescarWeb() {
+  try { datosWeb = await api('/api/puertos'); pintarWeb(false); } catch (e) { /* el aviso de conexión lo maneja refrescar() */ }
+}
+async function refrescar() {
+  try {
+    datos = await api('/api/estado');
+    document.getElementById('conexion').style.display = 'none';
+    document.getElementById('hora').textContent = 'actualizado ' + datos.ahora;
+    const cuenta = {};
+    datos.servicios.forEach(s => { const k = (s.tarjeta || {}).semaforo || 'gris'; cuenta[k] = (cuenta[k] || 0) + 1; });
+    document.getElementById('resumen').innerHTML = ['verde', 'amarillo', 'rojo', 'gris'].filter(k => cuenta[k])
+      .map(k => `<span class="chip"><span class="punto ${k}" style="width:8px;height:8px;box-shadow:none"></span>${cuenta[k]} ${NOMBRES_SEM[k]}</span>`).join('');
+    // Monitores (tipo "monitor") primero; luego el resto por semáforo (rojo → gris) y nombre.
+    const orden = [...datos.servicios].sort((a, b) => {
+      const ma = a.tipo === 'monitor' ? 0 : 1, mb = b.tipo === 'monitor' ? 0 : 1;
+      if (ma !== mb) return ma - mb;
+      const sa = ORDEN_SEM[(a.tarjeta || {}).semaforo] ?? 3, sb = ORDEN_SEM[(b.tarjeta || {}).semaforo] ?? 3;
+      return sa - sb || a.nombre.localeCompare(b.nombre);
+    });
+    document.getElementById('servicios').innerHTML = orden.length ? orden.map(tileServicio).join('')
+      : `<div class="vacio">No hay fichas en ${esc(datos.registro)}. Deja ahí un .json con el contrato de la Botonera (ver LEEME.md).</div>`;
+    const clave = datos.pendientes.map(p => p.servicio + '-' + p.numero).join(',');
+    if (clave !== clavePendientes) {            // no redibujar mientras escribes en un campo
+      clavePendientes = clave;
+      document.getElementById('sec-pendientes').hidden = !datos.pendientes.length;
+      document.getElementById('pendientes').innerHTML = datos.pendientes.map(tarjetaPendiente).join('');
+    }
+    if (abierto && abierto.tipo === 'servicio') pintarDetalle(false);
+  } catch (e) {
+    const c = document.getElementById('conexion');
+    c.textContent = /token|autoriz/.test(e.message) ? e.message : 'sin conexión con la botonera';
+    c.style.display = 'inline';
+  }
+}
+refrescar();
+refrescarWeb();
+setInterval(refrescar, 4000);
+setInterval(refrescarWeb, 5000);
+</script>
+</body>
+</html>
