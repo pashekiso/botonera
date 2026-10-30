@@ -29,6 +29,8 @@ para los Cowork). Hace la primera medición al terminar. Para quitarlo: `python3
 | `~/Library/Caches` | `du -sk` | > 10 GB | — |
 | `kernel_task` | `ps` | > 30 % CPU | — |
 
+Durante los primeros 10 minutos tras encender ("calentamiento"), la carga y `kernel_task` no se evalúan: la tarjeta queda en gris con "Esperando uptime". Umbral `calentamiento_s`.
+
 Rojo → "Conviene reiniciar: …"; amarillo → "Vigilar: …"; verde → "Sin señales de degradación".
 Los umbrales están en el dict `UMBRAL` al inicio de `mac_health.py`.
 

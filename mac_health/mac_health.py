@@ -52,6 +52,7 @@ UMBRAL = {
     "carga_por_nucleo": 1.5, "listeners": 5, "caches_gb": 10, "kernel_task_cpu": 30,
     "pageouts_delta": 20000,      # páginas por lectura (≈330 MB con páginas de 16 KB)
     "pageouts_lecturas": 3,
+    "calentamiento_s": 600,      # tras encender, la carga y kernel_task no se evalúan durante estos segundos
 }
 
 # Procesos que la mantención considera "de maquetas y pruebas" (se cierran). Se evalúa sobre la línea de comando.
@@ -319,7 +320,8 @@ def evaluar(d, historial):
                     % (len(deltas), deltas[-1] * d["pagina_bytes"] // 1024 ** 2))
     elif deltas and deltas[-1] > U["pageouts_delta"]:
         amarillo.append("paginó a disco en la última hora (+%d MB)" % (deltas[-1] * d["pagina_bytes"] // 1024 ** 2))
-    if (d["carga_por_nucleo"] or 0) > U["carga_por_nucleo"]:
+    d["calentando"] = (d["uptime_s"] or 0) < U["calentamiento_s"]
+    if not d["calentando"] and (d["carga_por_nucleo"] or 0) > U["carga_por_nucleo"]:
         amarillo.append("carga por núcleo %.1f" % d["carga_por_nucleo"])
     if d["limite_termico_cpu"] is not None and d["limite_termico_cpu"] < 100:
         amarillo.append("CPU limitada por temperatura al %d %%" % d["limite_termico_cpu"])
@@ -328,13 +330,16 @@ def evaluar(d, historial):
         amarillo.append("%d servidores locales abiertos" % len(abiertos))
     if (d["caches_gb"] or 0) > U["caches_gb"]:
         amarillo.append("~/Library/Caches ocupa %.1f GB" % d["caches_gb"])
-    if d["kernel_task_cpu"] > U["kernel_task_cpu"]:
+    if not d["calentando"] and d["kernel_task_cpu"] > U["kernel_task_cpu"]:
         amarillo.append("kernel_task al %.0f %% de CPU (suele ser control térmico)" % d["kernel_task_cpu"])
 
     if rojo:
         sem, rec = "rojo", "Conviene reiniciar: " + "; ".join(rojo)
     elif amarillo:
         sem, rec = "amarillo", "Vigilar: " + "; ".join(amarillo)
+    elif d["calentando"]:
+        sem, rec = "gris", "Esperando uptime: recién encendido (%s); carga y térmico se evalúan a los %d min" % (
+            duracion(d["uptime_s"] or 0), U["calentamiento_s"] // 60)
     else:
         sem, rec = "verde", "Sin señales de degradación"
     d["semaforo"], d["motivos_rojo"], d["motivos_amarillo"], d["recomendacion"] = sem, rojo, amarillo, rec
