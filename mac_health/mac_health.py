@@ -59,11 +59,21 @@ RE_DEV = re.compile(
     r"(uvicorn|gunicorn|hypercorn|flask run|http\.server|streamlit|marimo|jupyter|vite|next dev|webpack|nodemon|"
     r"ts-node|live-server|ngrok|cloudflared|ms-playwright|--headless|Chrome for Testing|chromium|"
     r"--remote-debugging-port|--user-data-dir=.*/dev/)", re.I)
-# Nunca se tocan (además del propio proceso y la Botonera).
-RE_PROTEGIDO = re.compile(r"(botonera\.py|mac_health\.py|/System/|/usr/libexec/|/Library/Apple/|Claude\.app|Terminal\.app|"
-                          r"iTerm\.app|Google Chrome\.app|Safari\.app|Arc\.app|Brave Browser\.app|Firefox\.app)", re.I)
-APPS_NO_CERRAR = {"Finder", "Terminal", "iTerm2", "Claude", "Google Chrome", "Safari", "Arc", "Brave Browser",
-                  "Firefox", "loginwindow", "Dock", "SystemUIServer", "Control Center", "Notification Center"}
+# Nunca se tocan (además del propio proceso): la Botonera, apps instaladas, el sistema, colima/lima y ssh.
+# Se evalúa sobre la línea de comando COMPLETA (no la recortada para mostrar).
+RE_PROTEGIDO = re.compile(r"(botonera\.py|mac_health\.py|/System/|/usr/libexec/|/usr/sbin/|/Library/Apple/|/Applications/|"
+                          r"/Library/Application Support/|limactl|/\.colima/|/\.lima/|(^|/)ssh[: ]|/opt/homebrew/(opt|Cellar)/(colima|lima|docker)|"
+                          r"Claude\.app|Terminal\.app|iTerm\.app|Google Chrome\.app|Safari\.app|Arc\.app|Brave Browser\.app|Firefox\.app|Microsoft Edge\.app)", re.I)
+APPS_NO_CERRAR = {"Finder", "Terminal", "iTerm2", "Claude", "Google Chrome", "Safari", "Arc", "Brave Browser", "Firefox",
+                  "Microsoft Edge", "Vivaldi", "Opera", "Orion", "loginwindow", "Dock", "SystemUIServer", "Control Center",
+                  "Notification Center"}
+
+
+def protegido(cmd):
+    """True si el proceso no debe cerrarse. Playwright vive en ~/Library/Caches/ms-playwright y sí se cierra."""
+    if "ms-playwright" in cmd:
+        return False
+    return bool(RE_PROTEGIDO.search(cmd))
 CACHES_PROTEGER = {"ms-playwright"}
 
 
@@ -238,8 +248,9 @@ def listeners():
                 res.append({"pid": pid, "proceso": nombre, "puerto": int(m.group(1))})
     cmds = comandos({r["pid"] for r in res})
     for r in res:
-        r["comando"] = cmds.get(r["pid"], "")[:160]
-        r["protegido"] = bool(RE_PROTEGIDO.search(r["comando"]))
+        completo = cmds.get(r["pid"], "")
+        r["comando"] = completo[:160]
+        r["protegido"] = protegido(completo)
     return res
 
 
@@ -265,7 +276,7 @@ def procesos_dev():
         if not m:
             continue
         pid, ppid, etime, rss, cmd = int(m.group(1)), int(m.group(2)), m.group(3), int(m.group(4)), m.group(5)
-        if pid in yo or RE_PROTEGIDO.search(cmd) or not RE_DEV.search(cmd):
+        if pid in yo or protegido(cmd) or not RE_DEV.search(cmd):
             continue
         res.append({"pid": pid, "ppid": ppid, "tiempo": etime, "mem_mb": rss // 1024, "comando": cmd[:160]})
     return res
@@ -406,9 +417,9 @@ def tarjeta():
 # --------------------------------------------------------------------------- mantención previa al reinicio
 class Mantencion:
     PASOS = [
+        ("Detener colima / Docker", "detener_docker"),
         ("Cerrar servidores locales de maquetas", "cerrar_servidores"),
         ("Cerrar procesos de pruebas (Playwright, dev servers)", "cerrar_procesos_dev"),
-        ("Detener colima / Docker", "detener_docker"),
         ("Cerrar aplicaciones abiertas", "cerrar_apps"),
         ("Limpiar cachés de desarrollo (brew, npm, pip, uv)", "caches_dev"),
         ("Vaciar ~/Library/Caches", "caches_usuario"),
@@ -544,7 +555,11 @@ class Mantencion:
         antes = du_kb(carpeta, 90) or 0
         n = 0
         ahora = time.time()
-        for hijo in carpeta.iterdir():
+        try:
+            hijos = list(carpeta.iterdir())
+        except PermissionError:
+            raise
+        for hijo in hijos:
             if hijo.name in proteger:
                 continue
             try:
@@ -600,8 +615,16 @@ class Mantencion:
         return "%d entradas, %d MB" % (n, mb)
 
     def papelera(self):
-        n, mb = self._borrar_contenido(HOME / ".Trash")
-        return "%d elementos, %d MB" % (n, mb)
+        try:
+            n, mb = self._borrar_contenido(HOME / ".Trash")
+            return "%d elementos, %d MB" % (n, mb)
+        except PermissionError:
+            pass
+        # Sin Acceso total al disco, ~/.Trash está vedado para Python: se lo pedimos a Finder, que sí puede.
+        rc, out = run(["/usr/bin/osascript", "-e", 'tell application "Finder" to empty trash'], 60)
+        if rc != 0:
+            raise RuntimeError("Finder no pudo vaciar la Papelera: " + out.strip()[:150])
+        return "vaciada por Finder (Python no tiene Acceso total al disco)"
 
     def estado_ventanas(self):
         n, mb = self._borrar_contenido(HOME / "Library" / "Saved Application State")

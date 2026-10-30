@@ -37,16 +37,17 @@ Los umbrales están en el dict `UMBRAL` al inicio de `mac_health.py`.
 - **Medir ahora**: lectura inmediata (tarda unos segundos por el `du` de Caches).
 - **Preparar reinicio** (pide confirmación): corre en segundo plano, el avance se ve en el subtítulo de la
   tarjeta ("Mantención en curso: paso k/13 …") y en **Ver registro**. Pasos, en orden:
-  1. Cierra los servidores que escuchan en localhost (salvo la Botonera, apps del sistema y navegadores).
-  2. Cierra procesos de pruebas: uvicorn, http.server, vite, streamlit, Playwright/Chrome headless, ngrok…
-  3. `colima stop` y quit de Docker Desktop si están corriendo.
+  1. `colima stop` y quit de Docker Desktop si están corriendo.
+  2. Cierra los servidores que escuchan en localhost, salvo la Botonera, todo lo que viva en `/Applications`,
+     `/System` o `/Library`, colima/lima, ssh y los navegadores.
+  3. Cierra procesos de pruebas: uvicorn, http.server, vite, streamlit, Playwright/Chrome headless, ngrok…
   4. Pide quit a las apps abiertas, excepto Finder, Terminal, iTerm2, Claude y navegadores. Las que
      queden abiertas (documentos sin guardar) se listan en la tarjeta.
   5. `brew cleanup -s --prune=all`, `npm cache clean --force`, `pip cache purge`, `uv cache clean`, DerivedData.
   6. Vacía `~/Library/Caches` completo, protegiendo `ms-playwright` (los navegadores de net_runner y web_gateway).
   7. Temporales del usuario (`DARWIN_USER_TEMP_DIR`) con más de 1 h.
   8. `~/Library/Logs` con más de 7 días.
-  9. Papelera.
+  9. Papelera (si Python no tiene Acceso total al disco, se lo pide a Finder).
   10. `~/Library/Saved Application State` (las apps no restauran ventanas).
   11. `defaults write com.apple.loginwindow TALLogoutSavesState false` y `NSQuitAlwaysKeepsWindows false`.
   12. `dscacheutil -flushcache`.
