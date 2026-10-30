@@ -23,13 +23,14 @@ close it with a click. Anything — hand-made or built by your AI assistant — 
 | `docs/CONTRATO.md` | The card/tile contract (what anyone plugging something in needs to know) |
 | `docs/CONECTAR.md` | Recipes to connect your own solutions |
 | `docs/PROMPT-IA.md` | Ready-made prompt so your AI assistant connects something, or rebuilds the panel on your stack |
+| `docs/SIN-CODIGO.md` | For non-programmers: a prompt so their AI assistant installs it, and what to expect (Spanish) |
 
 ## Install
 
 Requires macOS and Python 3.9+ (comes with the Xcode command-line tools, or `brew install python`).
 
 ```bash
-git clone https://github.com/pashekiso/botonera.git
+git clone https://github.com/pashekiso/botonera.git   # or Code → Download ZIP
 cd botonera
 bash instalar.command               # panel only
 bash instalar.command --con-salud   # panel + Mac health monitor

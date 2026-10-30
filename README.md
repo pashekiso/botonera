@@ -26,13 +26,16 @@ un JSON de pocas líneas.
 | `docs/CONTRATO.md` | El contrato de ficha y tarjeta (lo que necesita saber quien conecte algo) |
 | `docs/CONECTAR.md` | Recetas para sumar tus propias soluciones |
 | `docs/PROMPT-IA.md` | Prompt listo para que tu asistente de IA conecte algo, o replique el panel en tu stack |
+| `docs/SIN-CODIGO.md` | Para quien no programa: prompt para que su asistente de IA la instale, y qué esperar |
 
 ## Instalar
+
+¿No programas? Pásale [docs/SIN-CODIGO.md](docs/SIN-CODIGO.md) a tu asistente de IA.
 
 Requisitos: macOS, Python 3.9+ (viene con las herramientas de Xcode; o `brew install python`).
 
 ```bash
-git clone https://github.com/pashekiso/botonera.git
+git clone https://github.com/pashekiso/botonera.git   # o descarga el zip: Code → Download ZIP
 cd botonera
 bash instalar.command               # solo el panel
 bash instalar.command --con-salud   # panel + monitor de salud del Mac
