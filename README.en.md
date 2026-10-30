@@ -47,7 +47,7 @@ watch its output instead: `python3 ~/dev/botonera/botonera.py servir --abrir`.
 
 Windows 10/11. If Python 3.9+ is missing, the installer gets it with `winget` for your user only. Unzip the
 repo and double-click `instalar.cmd` (or `powershell -ExecutionPolicy Bypass -File .\instalar.ps1`). The panel
-runs as a user **scheduled task** (`Botonera`, at logon, no window) and OSHealth as an hourly task. No admin
+runs without a window, auto-started from your user's Startup folder (`Botonera.vbs`), and OSHealth as an hourly scheduled task. No admin
 rights needed. **Beta**: written without a Windows machine to test on; portable parts are tested, the
 `schtasks`/`netstat`/PowerShell integration is not. Please report issues.
 

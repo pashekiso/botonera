@@ -47,7 +47,10 @@ PLIST = Path.home() / "Library" / "LaunchAgents" / (LABEL + ".plist")
 LAUNCHCTL = "/bin/launchctl"
 LOG = VAR / "botonera.log"
 WIN = sys.platform == "win32"
-TAREA = "Botonera"                               # nombre de la tarea programada en Windows
+TAREA = "Botonera"
+# Windows: inicio automático por la carpeta Inicio del usuario (no pide administrador; schtasks /SC ONLOGON sí lo pide).
+STARTUP = Path(os.environ.get("APPDATA") or Path.home() / "AppData" / "Roaming") / "Microsoft" / "Windows" / "Start Menu" / "Programs" / "Startup"
+LANZADOR = STARTUP / "Botonera.vbs"
 # En Windows, los procesos hijos no deben abrir ventanas de consola (la Botonera corre con pythonw).
 SUBPROC = {"creationflags": subprocess.CREATE_NO_WINDOW} if WIN else {}
 # Los scripts de las fichas (Python) imprimen JSON en UTF-8, con cualquier nombre de usuario y página de códigos.
@@ -387,7 +390,7 @@ def servir(abrir):
 def tarjeta_propia():
     pid, vivo, ld = pid_archivo(), puerto_vivo(), launchd_estado()
     n = len(fichas())
-    nombre_srv = ("tarea programada %s" % TAREA) if WIN else ("servicio launchd %s" % LABEL)
+    nombre_srv = "inicio automático (carpeta Inicio, sin ventana)" if WIN else ("servicio launchd %s" % LABEL)
     modo = nombre_srv if ld["corriendo"] else ("ventana de Terminal" if vivo else ("servicio instalado pero detenido" if ld["cargado"] else "sin servicio instalado"))
     atencion = []
     if vivo and not ld["corriendo"]:
@@ -425,14 +428,6 @@ def abrir_navegador():
 
 
 # ---- Windows: tarea programada al iniciar sesión (schtasks), sin ventana (pythonw) ----
-def _schtasks(*args, timeout=20):
-    try:
-        r = subprocess.run(["schtasks"] + list(args), capture_output=True, text=True, timeout=timeout, **SUBPROC)
-        return r.returncode, (r.stdout + r.stderr).strip()
-    except (OSError, subprocess.TimeoutExpired) as ex:
-        return 1, str(ex)
-
-
 def _pythonw():
     cand = Path(sys.executable).with_name("pythonw.exe")
     return str(cand if cand.exists() else sys.executable)
@@ -449,18 +444,28 @@ def _proceso_vivo(pid):
 
 
 def tarea_estado():
-    """Equivalente de launchd_estado() en Windows: la tarea existe (cargado) y el servidor responde (corriendo)."""
-    rc, _ = _schtasks("/Query", "/TN", TAREA, timeout=10)
+    """Equivalente de launchd_estado() en Windows: el lanzador existe (cargado) y el servidor responde (corriendo)."""
     pid = pid_archivo()
     vivo = puerto_vivo() and _proceso_vivo(pid)
-    return {"cargado": rc == 0, "corriendo": vivo, "pid": pid if vivo else None}
+    return {"cargado": LANZADOR.exists(), "corriendo": vivo, "pid": pid if vivo else None}
+
+
+def _lanzar_oculto():
+    """Arranca el servidor con pythonw, sin ventana, independiente de esta consola."""
+    flags = subprocess.CREATE_NO_WINDOW | subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP
+    subprocess.Popen([_pythonw(), str(BASE / "botonera.py"), "servir"], cwd=str(BASE), close_fds=True,
+                     stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, creationflags=flags)
+    for _ in range(24):
+        if puerto_vivo():
+            return True
+        time.sleep(0.25)
+    return puerto_vivo()
 
 
 def tarea_instalar(silencioso=False):
     VAR.mkdir(parents=True, exist_ok=True)
     _rotar_log()
-    tr = '"%s" "%s" servir' % (_pythonw(), BASE / "botonera.py")
-    pid = pid_archivo()                      # detener una botonera suelta (ventana) para que la tarea tome el puerto
+    pid = pid_archivo()                      # detener una botonera suelta (ventana) para que el nuevo proceso tome el puerto
     if pid and puerto_vivo():
         try:
             os.kill(pid, signal.SIGTERM)
@@ -470,17 +475,17 @@ def tarea_instalar(silencioso=False):
             if not puerto_vivo():
                 break
             time.sleep(0.25)
-    rc, out = _schtasks("/Create", "/F", "/TN", TAREA, "/SC", "ONLOGON", "/RL", "LIMITED", "/TR", tr)
-    if rc != 0:
-        res = {"ok": False, "mensaje": "schtasks /Create rc=%s: %s" % (rc, out[:300])}
-    else:
-        _schtasks("/Run", "/TN", TAREA)
-        for _ in range(24):
-            if puerto_vivo():
-                break
-            time.sleep(0.25)
-        res = {"ok": puerto_vivo(), "tarea": TAREA, "url": url(),
-               "mensaje": "tarea %s creada y corriendo en %s" % (TAREA, url()) if puerto_vivo() else "la tarea se creó pero el servidor no responde: revisa %s" % LOG}
+    try:
+        STARTUP.mkdir(parents=True, exist_ok=True)
+        vbs = 'Set sh = CreateObject("WScript.Shell")\r\nsh.Run """%s"" ""%s"" servir", 0, False\r\n' % (_pythonw(), BASE / "botonera.py")
+        LANZADOR.write_text(vbs, encoding="mbcs")      # WScript lee el .vbs en la página de códigos ANSI del sistema
+        res = {"ok": True}
+    except (OSError, UnicodeEncodeError) as ex:
+        res = {"ok": False, "mensaje": "no pude escribir %s: %s" % (LANZADOR, ex)}
+    if res["ok"]:
+        vivo = _lanzar_oculto()
+        res = {"ok": vivo, "lanzador": str(LANZADOR), "url": url(),
+               "mensaje": ("inicio automático instalado y corriendo en %s" % url()) if vivo else "el lanzador se creó pero el servidor no responde: revisa %s" % LOG}
     if not silencioso:
         print(json.dumps(res, ensure_ascii=False))
     return res
@@ -573,8 +578,11 @@ def servicio_instalar(silencioso=False):
 def servicio_desinstalar():
     if WIN:
         detener_windows()
-        rc, out = _schtasks("/Delete", "/F", "/TN", TAREA)
-        print(json.dumps({"ok": rc == 0, "mensaje": "tarea %s eliminada" % TAREA if rc == 0 else out[:200]}, ensure_ascii=False))
+        try:
+            LANZADOR.unlink()
+        except OSError:
+            pass
+        print(json.dumps({"ok": True, "mensaje": "inicio automático eliminado (%s)" % LANZADOR}, ensure_ascii=False))
         return
     _launchctl("bootout", "gui/%d/%s" % (os.getuid(), LABEL))
     try:
@@ -593,12 +601,8 @@ def iniciar(abrir=True):
         res = {"ok": True, "mensaje": "ya estaba corriendo en %s" % url()}
     elif WIN:
         if tarea_estado()["cargado"]:
-            _schtasks("/Run", "/TN", TAREA)
-            for _ in range(24):
-                if puerto_vivo():
-                    break
-                time.sleep(0.25)
-            res = {"ok": puerto_vivo(), "mensaje": ("corriendo en %s" % url()) if puerto_vivo() else "no levantó: revisa %s" % LOG}
+            vivo = _lanzar_oculto()
+            res = {"ok": vivo, "mensaje": ("corriendo en %s" % url()) if vivo else "no levantó: revisa %s" % LOG}
         else:
             res = tarea_instalar(silencioso=True)
     elif PLIST.exists():
@@ -620,7 +624,6 @@ def iniciar(abrir=True):
 
 
 def detener_windows():
-    _schtasks("/End", "/TN", TAREA, timeout=10)
     pid = pid_archivo()
     if pid:
         try:
@@ -725,7 +728,7 @@ def main():
     elif accion_cli == "servicio":
         sub = sys.argv[2] if len(sys.argv) > 2 else ""
         if sub == "instalar":
-            servicio_instalar()
+            sys.exit(0 if servicio_instalar().get("ok") else 1)
         elif sub == "desinstalar":
             servicio_desinstalar()
         else:

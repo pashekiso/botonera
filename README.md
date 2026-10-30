@@ -62,8 +62,8 @@ powershell -ExecutionPolicy Bypass -File .\instalar.ps1          # panel + OSHea
 powershell -ExecutionPolicy Bypass -File .\instalar.ps1 --sin-salud
 ```
 
-Queda corriendo como **tarea programada** de tu usuario (`Botonera`, al iniciar sesión, sin ventana) y OSHealth
-como tarea horaria (`OSHealth`). Registro en `%USERPROFILE%\dev\botonera\var\botonera.log`. Nada requiere
+Queda corriendo sin ventana, con inicio automático en la carpeta Inicio de tu usuario (`Botonera.vbs`), y OSHealth
+como tarea programada horaria (`OSHealth`). Registro en `%USERPROFILE%\dev\botonera\var\botonera.log`. Nada requiere
 administrador. **Estado: beta** — el código de Windows se escribió sin un equipo Windows para probarlo; las
 partes portables (servidor, página, lógica de semáforo, parsers) están probadas, la integración con `schtasks`,
 `netstat` y PowerShell no. Los problemas van en los issues del repo.

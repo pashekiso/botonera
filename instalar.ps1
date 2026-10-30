@@ -59,15 +59,15 @@ if (-not (Test-Path "$Destino\config.json")) {
 $Pyw = Join-Path (Split-Path $Py) "pythonw.exe"; if (-not (Test-Path $Pyw)) { $Pyw = $Py }
 @"
 @echo off
-rem Arranca la Botonera como tarea de usuario (si no está corriendo) y abre el navegador.
+rem Arranca la Botonera (si no esta corriendo) y abre el navegador.
 "$Py" "$Destino\botonera.py" iniciar
 "@ | Set-Content -Encoding ASCII "$Destino\iniciar_botonera.cmd"
 
 & $Py "$Destino\botonera.py" fichas | Out-Null
 Write-Host "   ficha propia escrita en $Destino\servicios\botonera.json"
 $r = & $Py "$Destino\botonera.py" servicio instalar
-if ($LASTEXITCODE -eq 0) { Write-Host "   tarea programada 'Botonera' corriendo en http://127.0.0.1:$Puerto/ (arranca sola al iniciar sesión)" }
-else { Write-Host "   AVISO: la tarea no levantó ($r); revisa $Destino\var\botonera.log" }
+if ($LASTEXITCODE -eq 0) { Write-Host "   Botonera corriendo en http://127.0.0.1:$Puerto/ (inicio automático en la carpeta Inicio, sin ventana)" }
+else { Write-Host "   AVISO: no levantó: $r"; Write-Host "   revisa $Destino\var\botonera.log" }
 
 # ---- OSHealth
 if (-not $SinSalud) {

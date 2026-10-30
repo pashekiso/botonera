@@ -1,6 +1,6 @@
 # Instalarla con tu asistente de IA, sin saber programar
 
-(Mac, y Windows en beta: el mismo prompt sirve; en Windows el panel y OSHealth corren como tareas programadas.)
+(Mac, y Windows en beta: el mismo prompt sirve; en Windows el panel arranca desde la carpeta Inicio y OSHealth como tarea programada.)
 
 No necesitas saber Python ni usar git. Necesitas una cosa: que tu asistente de IA **pueda actuar en tu Mac**,
 no solo chatear. Sirven, por ejemplo: Claude (app de escritorio con el computador enlazado, o Claude Code),
