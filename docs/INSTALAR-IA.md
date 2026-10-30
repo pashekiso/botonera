@@ -25,9 +25,10 @@ Decide esto ANTES de cualquier otra cosa, y dilo en tu primera frase ("Tu comput
    lo único que tienes y no hay herramienta de dispositivo, pregúntale "¿Tu computador es Mac o Windows?" y
    espera la respuesta. No asumas Mac.
 
-Luego decide: si puedes ejecutar comandos **en ese computador** (no en tu nube/VM), camino A; si no, pero
-tienes herramientas de archivos sobre sus carpetas y control de pantalla, camino A2; si no, camino B. En el
-camino B dale exactamente los pasos de abajo, en orden, sin agregar alternativas.
+Luego decide, en este orden: si puedes ejecutar comandos **en ese computador** (no en tu nube/VM), camino A;
+si no, pero tienes herramientas de archivos sobre sus carpetas y control de pantalla, camino A2; si solo tienes
+herramientas de archivos, camino A3 (Windows) o B (Mac); si no tienes nada de eso, camino B. En los caminos
+A3 y B dale exactamente los pasos indicados, en orden, sin agregar alternativas.
 
 ## Si ya existen `~/dev/botonera` (Mac) o `%USERPROFILE%\dev\botonera` (Windows)
 
@@ -113,7 +114,23 @@ Es el caso de la app de Claude con el computador enlazado. Puedes instalar sin q
    pide instalar Python o permiso de control de cuentas, pulsa **Sí** (o pídeselo a la persona) y espera.
 5. Si el control de pantalla no te deja hacer el doble clic, cae al camino B.
 
-## Windows — Camino B (no puedes ejecutar en el Windows)
+## Windows — Camino A3 (sin shell ni control de pantalla, pero con herramientas de archivos)
+
+Es el camino preferido cuando no puedes ejecutar en el equipo: la persona solo hace un doble clic.
+
+1. En tu shell descarga y descomprime el repo (`curl -L https://github.com/pashekiso/botonera/archive/refs/heads/main.zip -o /tmp/b.zip && unzip -qo /tmp/b.zip -d /tmp`).
+2. Pide acceso a la carpeta **Downloads** (Descargas) con una frase simple ("necesito permiso para dejar los
+   archivos del panel en tu carpeta Descargas") y escribe ahí la carpeta completa `botonera-main`, con todos
+   sus archivos y subcarpetas (`botonera\`, `botonera\estados\`, `win_health\`, `docs\`, `fichas-ejemplo\`,
+   `instalar.cmd`, `instalar.ps1`, `README.md`). Sin la marca "descargado de internet", SmartScreen no interviene.
+3. Dile a la persona, exactamente: "Abre la carpeta **Descargas**, entra a **botonera-main** y haz **doble clic en
+   `instalar.cmd`**. Se abre una ventana negra que instala todo; cuando diga *Botonera corriendo* y *Listo*, pulsa
+   cualquier tecla para cerrarla. Si aparece una ventana pidiendo permiso para instalar Python, pulsa **Sí**."
+4. Verifica con las herramientas de archivos que existan `dev\botonera\var\botonera.pid` y
+   `dev\botonera\var\botonera.log` en su carpeta de usuario (pide acceso a `dev` si hace falta), y explícale
+   el resultado. Si no aparecen, pídele que te diga qué mostró la ventana negra.
+
+## Windows — Camino B (no puedes ejecutar en el Windows ni escribir archivos)
 
 1. "Pulsa la tecla **Windows**, escribe **PowerShell**, pulsa Enter."
 2. "Copia esta línea completa, pégala en la ventana azul y pulsa Enter:"

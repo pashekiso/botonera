@@ -18,6 +18,8 @@ instalarla tú, dame el paso a paso más sencillo según lo que tenga mi máquin
 Eso es todo. Las instrucciones largas están en ese archivo, escritas para la IA: cómo saber si tu computador es Mac
 o Windows y si puede instalar por ti, qué hacer si no, los avisos típicos de cada sistema y qué contarte al final.
 Si tu asistente no te pregunta ni dice qué sistema tienes, dile "es Windows" (o "es Mac") y sigue.
+En Windows, lo normal es que te pida permiso para dejar archivos en Descargas y luego te diga que hagas doble
+clic en `instalar.cmd`; en Mac, que pegues una línea en Terminal.
 
 ## Lo que va a pasar
 
