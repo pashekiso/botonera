@@ -15,7 +15,7 @@ botones y, si alguna ficha lo declara, una cola de aprobaciones.
   botonera.py ver_log            abre var/botonera.log en Consola
   botonera.py fichas             (re)escribe la ficha de la propia botonera en la carpeta de registro
 
-Solo biblioteca estándar. Python 3.9+.
+Solo biblioteca estándar. Python 3.9+. macOS (launchd) y Windows (tarea programada al iniciar sesión; beta).
 """
 import json
 import os
@@ -46,6 +46,10 @@ LABEL = "local.botonera"
 PLIST = Path.home() / "Library" / "LaunchAgents" / (LABEL + ".plist")
 LAUNCHCTL = "/bin/launchctl"
 LOG = VAR / "botonera.log"
+WIN = sys.platform == "win32"
+TAREA = "Botonera"                               # nombre de la tarea programada en Windows
+# En Windows, los procesos hijos no deben abrir ventanas de consola (la Botonera corre con pythonw).
+SUBPROC = {"creationflags": subprocess.CREATE_NO_WINDOW} if WIN else {}
 OCULTAS = {"estado", "pendientes", "ver", "aprobar", "aprobar_riesgo_alto", "rechazar", "lanzar", "catalogo",
            "trabajos"}
 ETIQUETAS = {"iniciar": "Iniciar", "iniciar_sin_ventana": "Iniciar sin ventana", "detener": "Detener",
@@ -102,7 +106,7 @@ def fichas():
 def correr(cmd, timeout):
     """Ejecuta una lista de argumentos (sin shell). Devuelve (rc, objeto_json_o_None, texto)."""
     try:
-        r = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, stdin=subprocess.DEVNULL)
+        r = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, stdin=subprocess.DEVNULL, **SUBPROC)
     except subprocess.TimeoutExpired:
         return 124, None, "no respondió en %s s" % timeout
     except (OSError, ValueError) as ex:
@@ -343,24 +347,28 @@ def url():
 
 def servir(abrir):
     VAR.mkdir(parents=True, exist_ok=True)
+    if sys.stdout is None or (WIN and not sys.stdout.isatty()):
+        _rotar_log()
+        f = open(LOG, "a", encoding="utf-8", buffering=1)
+        sys.stdout = sys.stderr = f
     try:
         srv = Servidor(("127.0.0.1", CFG["puerto"]), Manejador)
     except OSError as ex:
         print("No pude abrir el puerto %d (%s). ¿Ya está corriendo? Abre %s" % (CFG["puerto"], ex, url()))
-        if abrir and sys.platform == "darwin":
-            subprocess.run(["/usr/bin/open", url()])
+        if abrir:
+            abrir_navegador()
         sys.exit(3)
     escribir_json(VAR / "botonera.pid", {"pid": os.getpid(), "url": url(), "iniciado": datetime.now().astimezone().isoformat(timespec="seconds")})
     signal.signal(signal.SIGTERM, lambda *_: threading.Thread(target=srv.shutdown, daemon=True).start())
     print("═" * 70)
     print(" Botonera  ·  %s" % url())
     print(" registro de fichas: %s" % CFG["registro"])
-    print(" Cierra esta ventana (o Ctrl+C) para detenerla." if sys.stdout.isatty() else " servicio launchd %s" % LABEL)
+    print(" Cierra esta ventana (o Ctrl+C) para detenerla." if sys.stdout.isatty() else (" tarea programada %s" % TAREA if WIN else " servicio launchd %s" % LABEL))
     print("═" * 70, flush=True)
     for m in fichas():
         log("ficha: %s (%s)" % (m["id"], m.get("tipo", "servicio")))
-    if abrir and sys.platform == "darwin":
-        threading.Timer(0.8, lambda: subprocess.run(["/usr/bin/open", url()])).start()
+    if abrir:
+        threading.Timer(0.8, abrir_navegador).start()
     try:
         srv.serve_forever()
     except KeyboardInterrupt:
@@ -376,12 +384,13 @@ def servir(abrir):
 def tarjeta_propia():
     pid, vivo, ld = pid_archivo(), puerto_vivo(), launchd_estado()
     n = len(fichas())
-    modo = ("servicio launchd %s" % LABEL) if ld["corriendo"] else ("ventana de Terminal" if vivo else ("servicio cargado pero detenido" if ld["cargado"] else "sin servicio instalado"))
+    nombre_srv = ("tarea programada %s" % TAREA) if WIN else ("servicio launchd %s" % LABEL)
+    modo = nombre_srv if ld["corriendo"] else ("ventana de Terminal" if vivo else ("servicio instalado pero detenido" if ld["cargado"] else "sin servicio instalado"))
     atencion = []
     if vivo and not ld["corriendo"]:
         atencion.append("Corre en una ventana de Terminal: con Iniciar pasa a ser un servicio que arranca solo al iniciar sesión")
     if ld["cargado"] and not vivo:
-        atencion.append("launchd lo tiene cargado pero no responde: prueba Reiniciar y revisa el registro")
+        atencion.append("El servicio está instalado pero no responde: prueba Reiniciar y revisa el registro")
     t = {"semaforo": "verde" if vivo else ("rojo" if ld["cargado"] else "gris"), "titulo": "Botonera",
          "subtitulo": ("Corriendo en %s" % url()) if vivo else "Detenida",
          "datos": [{"etiqueta": "Modo", "valor": modo},
@@ -404,8 +413,80 @@ def _launchctl(*args, timeout=20):
         return 1, str(ex)
 
 
+def abrir_navegador():
+    try:
+        import webbrowser
+        webbrowser.open(url())
+    except Exception:
+        pass
+
+
+# ---- Windows: tarea programada al iniciar sesión (schtasks), sin ventana (pythonw) ----
+def _schtasks(*args, timeout=20):
+    try:
+        r = subprocess.run(["schtasks"] + list(args), capture_output=True, text=True, timeout=timeout, **SUBPROC)
+        return r.returncode, (r.stdout + r.stderr).strip()
+    except (OSError, subprocess.TimeoutExpired) as ex:
+        return 1, str(ex)
+
+
+def _pythonw():
+    cand = Path(sys.executable).with_name("pythonw.exe")
+    return str(cand if cand.exists() else sys.executable)
+
+
+def _proceso_vivo(pid):
+    if not pid:
+        return False
+    try:
+        r = subprocess.run(["tasklist", "/FI", "PID eq %d" % pid, "/NH"], capture_output=True, text=True, timeout=8, **SUBPROC)
+        return str(pid) in r.stdout
+    except Exception:
+        return False
+
+
+def tarea_estado():
+    """Equivalente de launchd_estado() en Windows: la tarea existe (cargado) y el servidor responde (corriendo)."""
+    rc, _ = _schtasks("/Query", "/TN", TAREA, timeout=10)
+    pid = pid_archivo()
+    vivo = puerto_vivo() and _proceso_vivo(pid)
+    return {"cargado": rc == 0, "corriendo": vivo, "pid": pid if vivo else None}
+
+
+def tarea_instalar(silencioso=False):
+    VAR.mkdir(parents=True, exist_ok=True)
+    _rotar_log()
+    tr = '"%s" "%s" servir' % (_pythonw(), BASE / "botonera.py")
+    pid = pid_archivo()                      # detener una botonera suelta (ventana) para que la tarea tome el puerto
+    if pid and puerto_vivo():
+        try:
+            os.kill(pid, signal.SIGTERM)
+        except OSError:
+            pass
+        for _ in range(20):
+            if not puerto_vivo():
+                break
+            time.sleep(0.25)
+    rc, out = _schtasks("/Create", "/F", "/TN", TAREA, "/SC", "ONLOGON", "/RL", "LIMITED", "/TR", tr)
+    if rc != 0:
+        res = {"ok": False, "mensaje": "schtasks /Create rc=%s: %s" % (rc, out[:300])}
+    else:
+        _schtasks("/Run", "/TN", TAREA)
+        for _ in range(24):
+            if puerto_vivo():
+                break
+            time.sleep(0.25)
+        res = {"ok": puerto_vivo(), "tarea": TAREA, "url": url(),
+               "mensaje": "tarea %s creada y corriendo en %s" % (TAREA, url()) if puerto_vivo() else "la tarea se creó pero el servidor no responde: revisa %s" % LOG}
+    if not silencioso:
+        print(json.dumps(res, ensure_ascii=False))
+    return res
+
+
 def launchd_estado():
     """{'cargado', 'corriendo', 'pid'} del agente local.botonera (todo False/None si launchd no existe)."""
+    if WIN:
+        return tarea_estado()
     info = {"cargado": False, "corriendo": False, "pid": None}
     if not os.path.exists(LAUNCHCTL):
         return info
@@ -445,6 +526,8 @@ def _rotar_log():
 
 def servicio_instalar(silencioso=False):
     """Escribe el plist, detiene una botonera suelta (modo ventana) si la hay y carga el agente."""
+    if WIN:
+        return tarea_instalar(silencioso)
     VAR.mkdir(parents=True, exist_ok=True)
     PLIST.parent.mkdir(parents=True, exist_ok=True)
     _rotar_log()
@@ -485,6 +568,11 @@ def servicio_instalar(silencioso=False):
 
 
 def servicio_desinstalar():
+    if WIN:
+        detener_windows()
+        rc, out = _schtasks("/Delete", "/F", "/TN", TAREA)
+        print(json.dumps({"ok": rc == 0, "mensaje": "tarea %s eliminada" % TAREA if rc == 0 else out[:200]}, ensure_ascii=False))
+        return
     _launchctl("bootout", "gui/%d/%s" % (os.getuid(), LABEL))
     try:
         PLIST.unlink()
@@ -495,11 +583,21 @@ def servicio_desinstalar():
 
 def iniciar(abrir=True):
     """Arranca el servicio (instalándolo si no existe) y abre el navegador."""
-    if sys.platform != "darwin":
-        print(json.dumps({"ok": False, "mensaje": "el servicio launchd es solo para macOS; usa 'servir'"}))
+    if sys.platform not in ("darwin", "win32"):
+        print(json.dumps({"ok": False, "mensaje": "el servicio es para macOS o Windows; en otros sistemas usa 'servir'"}))
         sys.exit(1)
     if puerto_vivo() and launchd_estado()["corriendo"]:
         res = {"ok": True, "mensaje": "ya estaba corriendo en %s" % url()}
+    elif WIN:
+        if tarea_estado()["cargado"]:
+            _schtasks("/Run", "/TN", TAREA)
+            for _ in range(24):
+                if puerto_vivo():
+                    break
+                time.sleep(0.25)
+            res = {"ok": puerto_vivo(), "mensaje": ("corriendo en %s" % url()) if puerto_vivo() else "no levantó: revisa %s" % LOG}
+        else:
+            res = tarea_instalar(silencioso=True)
     elif PLIST.exists():
         ld = launchd_estado()
         if not ld["cargado"]:
@@ -513,12 +611,31 @@ def iniciar(abrir=True):
     else:
         res = servicio_instalar(silencioso=True)
     if abrir and res["ok"]:
-        subprocess.run(["/usr/bin/open", url()])
+        abrir_navegador()
     print(json.dumps(res, ensure_ascii=False))
     sys.exit(0 if res["ok"] else 1)
 
 
+def detener_windows():
+    _schtasks("/End", "/TN", TAREA, timeout=10)
+    pid = pid_archivo()
+    if pid:
+        try:
+            os.kill(pid, signal.SIGTERM)          # en Windows: TerminateProcess
+        except OSError:
+            pass
+    for _ in range(20):
+        if not puerto_vivo():
+            break
+        time.sleep(0.25)
+    return not puerto_vivo()
+
+
 def detener():
+    if WIN:
+        ok = detener_windows()
+        print(json.dumps({"ok": ok, "mensaje": "detenida (Iniciar la vuelve a arrancar)" if ok else "sigue respondiendo en el puerto"}, ensure_ascii=False))
+        sys.exit(0 if ok else 1)
     ld = launchd_estado()
     if ld["cargado"]:
         rc, out = _launchctl("bootout", "gui/%d/%s" % (os.getuid(), LABEL))   # con KeepAlive, un kill solo lo reiniciaría
@@ -543,6 +660,9 @@ def detener():
 
 
 def reiniciar():
+    if WIN:
+        detener_windows()
+        return iniciar(abrir=False)
     if not launchd_estado()["cargado"]:
         return iniciar(abrir=False)
     rc, out = _launchctl("kickstart", "-k", "gui/%d/%s" % (os.getuid(), LABEL))
@@ -555,6 +675,10 @@ def reiniciar():
 def ver_log():
     LOG.parent.mkdir(parents=True, exist_ok=True)
     LOG.touch(exist_ok=True)
+    if WIN:
+        os.startfile(str(LOG))
+        print(json.dumps({"ok": True, "mensaje": "abriendo el registro"}))
+        return
     r = subprocess.run(["/usr/bin/open", "-a", "Console", str(LOG)], capture_output=True, text=True)
     print(json.dumps({"ok": r.returncode == 0, "mensaje": "abriendo el registro en Consola" if r.returncode == 0 else r.stderr[:200]}, ensure_ascii=False))
 
@@ -572,7 +696,7 @@ def escribir_fichas():
                      "reiniciar": {"cmd": yo + ["reiniciar"], "salida": "json"},
                      "detener": {"cmd": yo + ["detener"], "salida": "json", "confirmar": True},
                      "ver_log": {"cmd": yo + ["ver_log"], "salida": "json"},
-                     "abrir": {"cmd": ["/usr/bin/open", url()]}},
+                     "abrir": {"cmd": yo + ["abrir"]}},
         "archivos": {"log": str(LOG), "pid": str(VAR / "botonera.pid"), "plist": str(PLIST)},
     })
     print(json.dumps({"ok": True, "registro": str(reg), "fichas": ["botonera"]}, ensure_ascii=False))
@@ -592,6 +716,9 @@ def main():
         reiniciar()
     elif accion_cli == "ver_log":
         ver_log()
+    elif accion_cli == "abrir":
+        abrir_navegador()
+        print(json.dumps({"ok": True, "mensaje": "abriendo %s" % url()}))
     elif accion_cli == "servicio":
         sub = sys.argv[2] if len(sys.argv) > 2 else ""
         if sub == "instalar":

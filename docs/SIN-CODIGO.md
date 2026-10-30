@@ -1,5 +1,7 @@
 # Instalarla con tu asistente de IA, sin saber programar
 
+(Mac, y Windows en beta: el mismo prompt sirve; en Windows el panel y OSHealth corren como tareas programadas.)
+
 No necesitas saber Python ni usar git. Necesitas una cosa: que tu asistente de IA **pueda actuar en tu Mac**,
 no solo chatear. Sirven, por ejemplo: Claude (app de escritorio con el computador enlazado, o Claude Code),
 Codex CLI, Cursor o Windsurf en modo agente, Copilot CLI. Un chat de navegador sin acceso a tu computador solo
@@ -8,7 +10,7 @@ podrá dictarte los pasos.
 ## El prompt (cópialo tal cual)
 
 ```
-Quiero instalar una webapp local en este Mac con la menor intervención posible de mi parte. Sigue las
+Quiero instalar una webapp local en este computador con la menor intervención posible de mi parte. Sigue las
 instrucciones de https://github.com/pashekiso/botonera/blob/main/docs/INSTALAR-IA.md y, si no puedes
 instalarla tú, dame el paso a paso más sencillo según lo que tenga mi máquina.
 ```

@@ -18,6 +18,7 @@ close it with a click. Anything — hand-made or built by your AI assistant — 
 | Folder | What it is |
 |---|---|
 | `botonera/` | The panel: `botonera.py` (server), `pagina.html` (tile dashboard + detail drawer), `puertos.py` (discovers local web servers), `estados/comun.py` (helper for launchd services) and `estados/ejemplo_launchd.py` (template) |
+| `win_health/` | Same for Windows (**beta, untested on real Windows**): page file, `%TEMP%`, Recycle Bin, Docker Desktop/WSL |
 | `mac_health/` | Optional Mac health monitor: every hour it measures memory, swap, pressure, uptime, disk and local servers; recommends a reboot and, with one button, runs the pre-reboot cleanup so the machine comes back fresh |
 | `fichas-ejemplo/` | Three reference cards: plain port, launchd service, own CLI with approvals |
 | `docs/CONTRATO.md` | The card/tile contract (what anyone plugging something in needs to know) |
@@ -41,6 +42,14 @@ When it finishes, the panel is already running at `http://127.0.0.1:8790/` as a 
 `local.botonera`): it starts by itself at login, with no windows, logging to `~/dev/botonera/var/botonera.log`.
 If you ever stop it, double-click `iniciar_botonera.command` to bring it back. To run it in a Terminal and
 watch its output instead: `python3 ~/dev/botonera/botonera.py servir --abrir`.
+
+### Windows (beta)
+
+Windows 10/11. If Python 3.9+ is missing, the installer gets it with `winget` for your user only. Unzip the
+repo and double-click `instalar.cmd` (or `powershell -ExecutionPolicy Bypass -File .\instalar.ps1`). The panel
+runs as a user **scheduled task** (`Botonera`, at logon, no window) and OSHealth as an hourly task. No admin
+rights needed. **Beta**: written without a Windows machine to test on; portable parts are tested, the
+`schtasks`/`netstat`/PowerShell integration is not. Please report issues.
 
 ## How it works
 
@@ -85,8 +94,7 @@ Full contract in [docs/CONTRATO.md](docs/CONTRATO.md); recipes in [docs/CONECTAR
 
 ## Known limitations
 
-- macOS only (`launchctl`, `lsof`, `osascript`). Porting to Linux means replacing `comun.py` (systemd) and the
-  cleanup steps of `mac_health`.
+- macOS and Windows (beta). Linux would need `comun.py` (systemd), `puertos.py` (`ss`) and a `linux_health`.
 - The `mac_health` cleanup that quits apps uses AppleScript: macOS asks for Automation permission the first
   time; emptying `~/Library/Caches` and the Trash may need Full Disk Access for Terminal.
 - No authentication beyond the local token: built for one person on their own machine.

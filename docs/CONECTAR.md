@@ -16,7 +16,9 @@ cp fichas-ejemplo/maqueta-puerto.json ~/dev/botonera/servicios/mi_maqueta.json
 # edita: id, nombre, puerto (aparece dos veces en tarjeta.cmd), rutas
 ```
 
-## Receta 2 — Un servicio bajo launchd
+## Receta 2 — Un servicio bajo launchd (solo macOS)
+
+En Windows usa la receta 1 o la 3; `comun.py` habla con launchd.
 
 `botonera/estados/comun.py` ya sabe leer launchd (`launchctl print`), arrancar (`bootstrap` + `kickstart`),
 reiniciar (`kickstart -k`), detener (`bootout`) y abrir el registro en Consola. Solo tienes que decirle el

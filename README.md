@@ -21,6 +21,7 @@ un JSON de pocas líneas.
 | Carpeta | Qué es |
 |---|---|
 | `botonera/` | El panel: `botonera.py` (servidor), `pagina.html` (mosaico + detalle), `puertos.py` (descubre servidores web locales), `estados/comun.py` (ayudante para servicios bajo launchd) y `estados/ejemplo_launchd.py` (plantilla) |
+| `win_health/` | Lo mismo para Windows (**beta, sin probar en Windows real**): archivo de paginación, `%TEMP%`, Papelera de reciclaje, Docker Desktop/WSL ([detalle](win_health/LEEME.md)) |
 | `mac_health/` | Monitor opcional de salud del Mac: mide cada hora memoria, swap, presión, uptime, disco y servidores locales; recomienda reiniciar y, con un botón, prepara el equipo para que el reinicio lo deje limpio ([detalle](mac_health/LEEME.md)) |
 | `fichas-ejemplo/` | Tres fichas de referencia: puerto simple, servicio launchd, CLI propia con aprobaciones |
 | `docs/CONTRATO.md` | El contrato de ficha y tarjeta (lo que necesita saber quien conecte algo) |
@@ -32,6 +33,8 @@ un JSON de pocas líneas.
 ## Instalar
 
 ¿No programas? Pásale [docs/SIN-CODIGO.md](docs/SIN-CODIGO.md) a tu asistente de IA.
+
+### macOS
 
 Requisitos: macOS, Python 3.9+ (viene con las herramientas de Xcode; o `brew install python`).
 
@@ -48,6 +51,22 @@ Al terminar, la Botonera ya está corriendo en `http://127.0.0.1:8790/` como **s
 vuelve a levantar y abre el navegador. `instalar.command` se puede repetir para actualizar: conserva
 `config.json` y tus fichas. Para correrla en una Terminal y ver su salida en vivo:
 `python3 ~/dev/botonera/botonera.py servir --abrir`.
+
+### Windows (beta)
+
+Requisitos: Windows 10/11. Si no hay Python 3.9+, el instalador lo instala con `winget` solo para tu usuario.
+
+```powershell
+# descarga el zip (Code → Download ZIP), descomprímelo y haz doble clic en instalar.cmd, o en PowerShell:
+powershell -ExecutionPolicy Bypass -File .\instalar.ps1          # panel + OSHealth
+powershell -ExecutionPolicy Bypass -File .\instalar.ps1 --sin-salud
+```
+
+Queda corriendo como **tarea programada** de tu usuario (`Botonera`, al iniciar sesión, sin ventana) y OSHealth
+como tarea horaria (`OSHealth`). Registro en `%USERPROFILE%\dev\botonera\var\botonera.log`. Nada requiere
+administrador. **Estado: beta** — el código de Windows se escribió sin un equipo Windows para probarlo; las
+partes portables (servidor, página, lógica de semáforo, parsers) están probadas, la integración con `schtasks`,
+`netstat` y PowerShell no. Los problemas van en los issues del repo.
 
 ## Cómo funciona
 
@@ -93,13 +112,15 @@ Si trabajas con un asistente de IA, [docs/PROMPT-IA.md](docs/PROMPT-IA.md) le ex
 
 ## Limitaciones conocidas
 
-- macOS solamente (`launchctl`, `lsof`, `osascript`). Portarlo a Linux pide reemplazar `comun.py` (systemd)
-  y los pasos de mantención de `mac_health`.
+- macOS y Windows (beta). Linux pediría reemplazar `comun.py` (systemd), `puertos.py` (`ss`) y un `linux_health`.
+- En Windows la receta "servicio bajo launchd" de `docs/CONECTAR.md` no aplica; usa la receta de CLI propia o la de puerto.
 - La mantención de `mac_health` que cierra apps usa AppleScript: la primera vez macOS pide permiso de
   Automatización; vaciar `~/Library/Caches` y la Papelera puede pedir Acceso total al disco para Terminal.
 - No hay autenticación más allá del token local: está pensada para una sola persona en su propio equipo.
 - Desinstalar: `python3 ~/dev/botonera/botonera.py servicio desinstalar`, `python3 ~/dev/mac_health/mac_health.py desinstalar`
   y borrar `~/dev/botonera` y `~/dev/mac_health`.
+  En Windows: `python %USERPROFILE%\dev\botonera\botonera.py servicio desinstalar`, `python %USERPROFILE%\dev\win_health\win_health.py desinstalar`
+  y borrar esas dos carpetas.
 
 ## Licencia
 
