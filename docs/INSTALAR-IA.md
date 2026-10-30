@@ -38,6 +38,10 @@ curl -L https://github.com/pashekiso/botonera/archive/refs/heads/main.zip -o /tm
 
 - Si `python3` no existe o dispara el diálogo de "herramientas de línea de comandos": dile a la persona que
   pulse **Instalar** en ese diálogo, espera a que termine (varios minutos) y repite el comando.
+- Si tu entorno te pide permiso para escribir en `~/dev` o en `~/Library/LaunchAgents`, pídeselo a la persona
+  con una frase simple ("necesito permiso para instalar el panel y su inicio automático"). Si lo niega o el
+  entorno lo bloquea, el panel puede quedar instalado sin servicio: dile que abra `~/dev/botonera/iniciar_botonera.command`
+  con doble clic cada vez que quiera usarlo, o que te vuelva a pedir la instalación con el permiso concedido.
 - Si el instalador termina con "servicio local.botonera corriendo", abre `http://127.0.0.1:8790/` (el
   instalador ya lo intenta con `open`). Comprueba con `curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8790/`
   que responde 200.

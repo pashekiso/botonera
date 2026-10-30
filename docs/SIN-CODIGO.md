@@ -21,7 +21,10 @@ por ti, qué hacer si no, los avisos típicos de macOS y qué contarte al final.
 1. Tu asistente baja y descomprime el repo. Si no puede llegar a internet desde donde corre, te pedirá que
    descargues el zip tú mismo desde el link y lo dejes en Descargas.
 2. Se instala en `~/dev/botonera` (y el monitor del Mac en `~/dev/mac_health`). Nada se instala fuera de tu
-   carpeta de usuario, salvo un pequeño "agente" de macOS que mide la salud del equipo cada hora.
+   carpeta de usuario, salvo dos pequeños "agentes" de macOS en `~/Library/LaunchAgents` (uno mantiene el panel
+   encendido, el otro mide la salud del equipo cada hora). Si tu asistente te pide permiso para escribir en esas
+   carpetas, acéptalo; si no se lo das, el panel queda instalado pero no arranca solo: ábrelo con doble clic en
+   `~/dev/botonera/iniciar_botonera.command`.
 3. Al terminar, el panel ya está corriendo como un servicio de tu usuario: no queda ninguna ventana abierta y
    vuelve a arrancar solo cada vez que inicias sesión. Se abre tu navegador en `http://127.0.0.1:8790/`; esa
    dirección solo funciona desde tu propio Mac. Si algún día no carga, doble clic en
