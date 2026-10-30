@@ -1,8 +1,8 @@
 #!/bin/bash
 # instalar.command — instala (o actualiza) la Botonera en ~/dev/botonera y, si quieres, mac_health.
 #
-#   bash instalar.command              # Botonera
-#   bash instalar.command --con-salud  # Botonera + mac_health (monitor del Mac, cada hora)
+#   bash instalar.command              # Botonera + OSHealth (mac_health: monitor del Mac, cada hora)
+#   bash instalar.command --sin-salud  # solo la Botonera
 #
 # Variables opcionales: BOTONERA_HOME (destino), BOTONERA_PYTHON (intérprete), BOTONERA_PUERTO (8790).
 # Se puede repetir para actualizar: conserva config.json y las fichas que tú agregues.
@@ -43,12 +43,12 @@ chmod +x "$DESTINO/iniciar_botonera.command"
 "$PY" "$DESTINO/botonera.py" fichas >/dev/null
 echo "   ficha propia escrita en $DESTINO/servicios/botonera.json"
 
-if [ "${1:-}" = "--con-salud" ]; then
+if [ "${1:-}" != "--sin-salud" ]; then
   MH="${MAC_HEALTH_HOME:-$HOME/dev/mac_health}"
   mkdir -p "$MH"
   cp "$ORIGEN/mac_health/mac_health.py" "$ORIGEN/mac_health/instalar.command" "$ORIGEN/mac_health/LEEME.md" "$MH/"
   chmod +x "$MH/instalar.command"
-  echo "== mac_health =="
+  echo "== OSHealth (mac_health) =="
   BOTONERA_HOME="$DESTINO" "$PY" "$MH/mac_health.py" instalar
 fi
 

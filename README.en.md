@@ -32,8 +32,8 @@ Requires macOS and Python 3.9+ (comes with the Xcode command-line tools, or `bre
 ```bash
 git clone https://github.com/pashekiso/botonera.git   # or Code → Download ZIP
 cd botonera
-bash instalar.command               # panel only
-bash instalar.command --con-salud   # panel + Mac health monitor
+bash instalar.command               # panel + OSHealth (Mac health monitor)
+bash instalar.command --sin-salud   # panel only
 open ~/dev/botonera/iniciar_botonera.command
 ```
 

@@ -16,7 +16,7 @@ y explícame solo lo que yo tenga que hacer con el mouse.
    ~/Downloads/botonera (si ya existe, reemplázalo).
 2. Lee README.md para entender qué hace y no me preguntes nada que esté respondido ahí.
 3. Si puedes ejecutar comandos directamente en macOS, corre:
-   bash ~/Downloads/botonera/instalar.command --con-salud
+   bash ~/Downloads/botonera/instalar.command
    y luego abre ~/dev/botonera/iniciar_botonera.command.
    Si NO puedes ejecutar comandos en macOS (por ejemplo, si tu shell corre en una máquina virtual),
    dime exactamente qué archivo debo abrir con doble clic y en qué orden.
