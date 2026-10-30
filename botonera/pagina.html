@@ -189,6 +189,7 @@ let clavePendientes = '';
 let ocupado = false;
 let datos = null, datosWeb = null;          // última respuesta de /api/estado y /api/puertos
 let abierto = null;                         // {tipo: 'servicio'|'web', clave}
+let accionEnCurso = null;                   // {id, etiqueta} mientras el servidor ejecuta un botón
 let firmaDetalle = '';
 const previas = new Set();
 
@@ -211,7 +212,9 @@ async function api(ruta, opciones) {
 async function accion(id, nombre, valores, etiqueta) {
   if (ocupado) return;
   ocupado = true;
+  accionEnCurso = {id, etiqueta: etiqueta || nombre};
   document.body.style.cursor = 'progress';
+  pintarDetalle(true);
   try {
     const r = await api('/api/accion', {method: 'POST', body: JSON.stringify({id, accion: nombre, valores: valores || {}})});
     const texto = r.mensaje || (r.ok ? 'listo' : (r.texto || 'falló'));
@@ -220,8 +223,10 @@ async function accion(id, nombre, valores, etiqueta) {
     aviso(`${id} · ${etiqueta || nombre}: ${e.message}`, true);
   } finally {
     ocupado = false;
+    accionEnCurso = null;
     document.body.style.cursor = '';
-    setTimeout(refrescar, 600);
+    // El servicio puede tardar en reflejar el nuevo estado: refrescar varias veces, forzando el detalle.
+    [600, 2500, 6000].forEach(ms => setTimeout(async () => { await refrescar(); pintarDetalle(true); }, ms));
   }
 }
 
@@ -247,7 +252,10 @@ function detalleServicio(s) {
   const atencion = (t.atencion || []).length
     ? `<div class="atencion">${t.atencion.map(a => `<div>⚠︎ ${esc(a)}</div>`).join('')}</div>` : '';
   const off = (t.deshabilitar && typeof t.deshabilitar === 'object') ? t.deshabilitar : {};
-  const botones = (s.botones || []).map(b => off[b.accion] !== undefined
+  const ejecutando = accionEnCurso && accionEnCurso.id === s.id;
+  const botones = (s.botones || []).map(b => ejecutando
+    ? `<button class="inactivo" disabled>${esc(b.etiqueta)}</button>`
+    : off[b.accion] !== undefined
     ? `<button class="inactivo" disabled title="${esc(off[b.accion] || 'no disponible ahora')}">${esc(b.etiqueta)}</button>`
     : `<button data-id="${esc(s.id)}" data-accion="${esc(b.accion)}" data-etiqueta="${esc(b.etiqueta)}" data-confirmar="${b.confirmar ? 1 : 0}" data-aviso="${esc(b.aviso || '')}">${esc(b.etiqueta)}</button>`).join('');
   const motivos = (s.botones || []).filter(b => off[b.accion]).map(b => `${esc(b.etiqueta)}: ${esc(off[b.accion])}`).join(' · ');
@@ -263,7 +271,7 @@ function detalleServicio(s) {
       ${dl ? `<dl>${dl}</dl>` : ''}
       ${atencion}
       <div class="botones">${botones || '<span class="pie">Esta ficha no define acciones.</span>'}</div>
-      ${motivos ? `<div class="motivos">${motivos}</div>` : ''}
+      ${ejecutando ? `<div class="progreso"><div class="texto"><span class="spinner"></span><span>Ejecutando ${esc(accionEnCurso.etiqueta)}…</span></div></div>` : (motivos ? `<div class="motivos">${motivos}</div>` : '')}
       <div class="pie">actualizado ${esc(s.actualizado)}</div>`
   };
 }

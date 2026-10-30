@@ -674,8 +674,14 @@ def preparar(ejecutar):
     with open(LOG_MANT, "a", encoding="utf-8") as f:
         subprocess.Popen([PYTHON, str(Path(__file__).resolve()), "preparar", "--ejecutar"], stdout=f, stderr=f,
                          stdin=subprocess.DEVNULL, start_new_session=True, cwd=str(BASE))
-    print(json.dumps({"ok": True, "mensaje": "mantención iniciada en segundo plano; el avance se ve en la tarjeta y en Ver registro"},
-                     ensure_ascii=False))
+    # Esperar a que el hijo escriba su primer estado, para que el siguiente refresco de la Botonera ya muestre la barra.
+    t0 = time.time()
+    while time.time() - t0 < 3:
+        m = leer_json(MANTENCION) or {}
+        if m.get("estado") == "en_curso" and m.get("inicio", 0) >= t0 - 1:
+            break
+        time.sleep(0.2)
+    print(json.dumps({"ok": True, "mensaje": "mantención iniciada; el avance se ve en la tarjeta y en Ver registro"}, ensure_ascii=False))
 
 
 def reiniciar():
