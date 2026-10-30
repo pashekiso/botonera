@@ -6,15 +6,20 @@ Lee las fichas (*.json con "esquema": "botonera-servicio/1") de la carpeta de re
 comando "tarjeta" de cada una y lo muestra en una página web local con semáforo, datos, avisos,
 botones y, si alguna ficha lo declara, una cola de aprobaciones.
 
-  botonera.py servir [--abrir]   levanta la página en http://127.0.0.1:8790 (solo accesible desde este Mac)
+  botonera.py iniciar            instala (si hace falta) y arranca el servicio de usuario launchd; abre el navegador
+  botonera.py detener            detiene el servicio (o el proceso suelto, si corre en una Terminal)
+  botonera.py reiniciar          reinicia el servicio
+  botonera.py servicio instalar|desinstalar   escribe/quita ~/Library/LaunchAgents/local.botonera.plist
+  botonera.py servir [--abrir]   modo ventana: corre en esta Terminal (para depurar)
   botonera.py tarjeta            estado de la propia botonera (JSON, para su ficha)
-  botonera.py detener            detiene la botonera
+  botonera.py ver_log            abre var/botonera.log en Consola
   botonera.py fichas             (re)escribe la ficha de la propia botonera en la carpeta de registro
 
 Solo biblioteca estándar. Python 3.9+.
 """
 import json
 import os
+import plistlib
 import re
 import secrets
 import signal
@@ -37,6 +42,10 @@ VAR = BASE / "var"
 DEFECTO = {"puerto": 8790, "registro": str(BASE / "servicios"), "tarjeta_min_s": 3, "timeout_tarjeta_s": 15,
            "timeout_accion_s": 90}
 ESQUEMA = "botonera-servicio/"
+LABEL = "local.botonera"
+PLIST = Path.home() / "Library" / "LaunchAgents" / (LABEL + ".plist")
+LAUNCHCTL = "/bin/launchctl"
+LOG = VAR / "botonera.log"
 OCULTAS = {"estado", "pendientes", "ver", "aprobar", "aprobar_riesgo_alto", "rechazar", "lanzar", "catalogo",
            "trabajos"}
 ETIQUETAS = {"iniciar": "Iniciar", "iniciar_sin_ventana": "Iniciar sin ventana", "detener": "Detener",
@@ -345,7 +354,7 @@ def servir(abrir):
     print("═" * 70)
     print(" Botonera  ·  %s" % url())
     print(" registro de fichas: %s" % CFG["registro"])
-    print(" Cierra esta ventana (o Ctrl+C) para detenerla.")
+    print(" Cierra esta ventana (o Ctrl+C) para detenerla." if sys.stdout.isatty() else " servicio launchd %s" % LABEL)
     print("═" * 70, flush=True)
     for m in fichas():
         log("ficha: %s (%s)" % (m["id"], m.get("tipo", "servicio")))
@@ -364,35 +373,189 @@ def servir(abrir):
 
 
 def tarjeta_propia():
-    pid = None
-    try:
-        pid = json.loads((VAR / "botonera.pid").read_text(encoding="utf-8")).get("pid")
-    except (OSError, ValueError):
-        pass
-    vivo = False
-    try:
-        with socket.create_connection(("127.0.0.1", CFG["puerto"]), timeout=1):
-            vivo = True
-    except OSError:
-        pass
+    pid, vivo, ld = pid_archivo(), puerto_vivo(), launchd_estado()
     n = len(fichas())
-    t = {"semaforo": "verde" if vivo else "gris", "titulo": "Botonera",
+    modo = ("servicio launchd %s" % LABEL) if ld["corriendo"] else ("ventana de Terminal" if vivo else ("servicio cargado pero detenido" if ld["cargado"] else "sin servicio instalado"))
+    atencion = []
+    if vivo and not ld["corriendo"]:
+        atencion.append("Corre en una ventana de Terminal: con Iniciar pasa a ser un servicio que arranca solo al iniciar sesión")
+    if ld["cargado"] and not vivo:
+        atencion.append("launchd lo tiene cargado pero no responde: prueba Reiniciar y revisa el registro")
+    t = {"semaforo": "verde" if vivo else ("rojo" if ld["cargado"] else "gris"), "titulo": "Botonera",
          "subtitulo": ("Corriendo en %s" % url()) if vivo else "Detenida",
-         "datos": [{"etiqueta": "Fichas registradas", "valor": str(n)},
-                   {"etiqueta": "Registro", "valor": CFG["registro"]}] + ([{"etiqueta": "PID", "valor": str(pid)}] if vivo and pid else []),
-         "atencion": []}
+         "datos": [{"etiqueta": "Modo", "valor": modo},
+                   {"etiqueta": "Fichas registradas", "valor": str(n)},
+                   {"etiqueta": "Registro", "valor": CFG["registro"]},
+                   {"etiqueta": "Registro de actividad", "valor": str(LOG)}] + ([{"etiqueta": "PID", "valor": str(pid)}] if vivo and pid else []),
+         "atencion": atencion}
     print(json.dumps({"corriendo": vivo, "tarjeta": t}, ensure_ascii=False))
     sys.exit(0 if vivo else 1)
 
 
-def detener():
+# --------------------------------------------------------------------------- #
+# Servicio de usuario (launchd): arranca solo al iniciar sesión, sin ventana
+# --------------------------------------------------------------------------- #
+def _launchctl(*args, timeout=20):
     try:
-        pid = int(json.loads((VAR / "botonera.pid").read_text(encoding="utf-8"))["pid"])
-        os.kill(pid, signal.SIGTERM)
-        print(json.dumps({"ok": True, "pid": pid}))
-    except (OSError, ValueError, KeyError) as ex:
-        print(json.dumps({"ok": False, "mensaje": "no estaba corriendo (%s)" % ex}, ensure_ascii=False))
+        r = subprocess.run([LAUNCHCTL] + list(args), capture_output=True, text=True, timeout=timeout)
+        return r.returncode, (r.stdout + r.stderr).strip()
+    except (OSError, subprocess.TimeoutExpired) as ex:
+        return 1, str(ex)
+
+
+def launchd_estado():
+    """{'cargado', 'corriendo', 'pid'} del agente local.botonera (todo False/None si launchd no existe)."""
+    info = {"cargado": False, "corriendo": False, "pid": None}
+    if not os.path.exists(LAUNCHCTL):
+        return info
+    rc, out = _launchctl("print", "gui/%d/%s" % (os.getuid(), LABEL), timeout=8)
+    if rc != 0:
+        return info
+    info["cargado"] = True
+    m = re.search(r"^\s*state = (\S+)", out, re.M)
+    info["corriendo"] = bool(m and m.group(1) == "running")
+    m = re.search(r"^\s*pid = (\d+)", out, re.M)
+    info["pid"] = int(m.group(1)) if m else None
+    return info
+
+
+def puerto_vivo():
+    try:
+        with socket.create_connection(("127.0.0.1", CFG["puerto"]), timeout=1):
+            return True
+    except OSError:
+        return False
+
+
+def pid_archivo():
+    try:
+        return int(json.loads((VAR / "botonera.pid").read_text(encoding="utf-8"))["pid"])
+    except (OSError, ValueError, KeyError):
+        return None
+
+
+def _rotar_log():
+    try:
+        if LOG.exists() and LOG.stat().st_size > 5_000_000:
+            os.replace(LOG, LOG.with_suffix(".log.1"))
+    except OSError:
+        pass
+
+
+def servicio_instalar(silencioso=False):
+    """Escribe el plist, detiene una botonera suelta (modo ventana) si la hay y carga el agente."""
+    VAR.mkdir(parents=True, exist_ok=True)
+    PLIST.parent.mkdir(parents=True, exist_ok=True)
+    _rotar_log()
+    with open(PLIST, "wb") as f:
+        plistlib.dump({
+            "Label": LABEL,
+            "ProgramArguments": [sys.executable, str(BASE / "botonera.py"), "servir"],
+            "RunAtLoad": True,
+            "KeepAlive": True,
+            "ThrottleInterval": 10,
+            "WorkingDirectory": str(BASE),
+            "StandardOutPath": str(LOG),
+            "StandardErrorPath": str(LOG),
+            "ProcessType": "Interactive",
+        }, f)
+    _launchctl("bootout", "gui/%d/%s" % (os.getuid(), LABEL))
+    # Si hay una botonera corriendo en una Terminal, se detiene para que el servicio tome el puerto.
+    pid = pid_archivo()
+    if pid and puerto_vivo():
+        try:
+            os.kill(pid, signal.SIGTERM)
+        except OSError:
+            pass
+        for _ in range(20):
+            if not puerto_vivo():
+                break
+            time.sleep(0.25)
+    rc, out = _launchctl("bootstrap", "gui/%d" % os.getuid(), str(PLIST))
+    for _ in range(20):
+        if puerto_vivo():
+            break
+        time.sleep(0.25)
+    res = {"ok": puerto_vivo(), "plist": str(PLIST), "url": url(), "launchd": launchd_estado(),
+           "mensaje": "servicio %s corriendo en %s" % (LABEL, url()) if puerto_vivo() else "bootstrap rc=%s: %s" % (rc, out[:300])}
+    if not silencioso:
+        print(json.dumps(res, ensure_ascii=False))
+    return res
+
+
+def servicio_desinstalar():
+    _launchctl("bootout", "gui/%d/%s" % (os.getuid(), LABEL))
+    try:
+        PLIST.unlink()
+    except OSError:
+        pass
+    print(json.dumps({"ok": True, "mensaje": "servicio %s descargado y plist borrado" % LABEL}))
+
+
+def iniciar(abrir=True):
+    """Arranca el servicio (instalándolo si no existe) y abre el navegador."""
+    if sys.platform != "darwin":
+        print(json.dumps({"ok": False, "mensaje": "el servicio launchd es solo para macOS; usa 'servir'"}))
         sys.exit(1)
+    if puerto_vivo() and launchd_estado()["corriendo"]:
+        res = {"ok": True, "mensaje": "ya estaba corriendo en %s" % url()}
+    elif PLIST.exists():
+        ld = launchd_estado()
+        if not ld["cargado"]:
+            _launchctl("bootstrap", "gui/%d" % os.getuid(), str(PLIST))
+        _launchctl("kickstart", "gui/%d/%s" % (os.getuid(), LABEL))
+        for _ in range(20):
+            if puerto_vivo():
+                break
+            time.sleep(0.25)
+        res = {"ok": puerto_vivo(), "mensaje": ("corriendo en %s" % url()) if puerto_vivo() else "no levantó: revisa var/botonera.log"}
+    else:
+        res = servicio_instalar(silencioso=True)
+    if abrir and res["ok"]:
+        subprocess.run(["/usr/bin/open", url()])
+    print(json.dumps(res, ensure_ascii=False))
+    sys.exit(0 if res["ok"] else 1)
+
+
+def detener():
+    ld = launchd_estado()
+    if ld["cargado"]:
+        rc, out = _launchctl("bootout", "gui/%d/%s" % (os.getuid(), LABEL))   # con KeepAlive, un kill solo lo reiniciaría
+        for _ in range(20):
+            if not puerto_vivo():
+                break
+            time.sleep(0.25)
+        ok = not puerto_vivo()
+        print(json.dumps({"ok": ok, "mensaje": "servicio detenido (Iniciar lo vuelve a cargar)" if ok else "bootout rc=%s: %s" % (rc, out[:200])}, ensure_ascii=False))
+        sys.exit(0 if ok else 1)
+    pid = pid_archivo()
+    if pid:
+        try:
+            os.kill(pid, signal.SIGTERM)
+            print(json.dumps({"ok": True, "pid": pid, "mensaje": "detenida (corría en una ventana)"}))
+            return
+        except OSError as ex:
+            print(json.dumps({"ok": False, "mensaje": "no pude detener el pid %s (%s)" % (pid, ex)}, ensure_ascii=False))
+            sys.exit(1)
+    print(json.dumps({"ok": False, "mensaje": "no estaba corriendo"}))
+    sys.exit(1)
+
+
+def reiniciar():
+    if not launchd_estado()["cargado"]:
+        return iniciar(abrir=False)
+    rc, out = _launchctl("kickstart", "-k", "gui/%d/%s" % (os.getuid(), LABEL))
+    time.sleep(1.5)
+    ok = puerto_vivo()
+    print(json.dumps({"ok": ok, "mensaje": "reiniciado" if ok else "kickstart rc=%s: %s" % (rc, out[:200])}, ensure_ascii=False))
+    sys.exit(0 if ok else 1)
+
+
+def ver_log():
+    LOG.parent.mkdir(parents=True, exist_ok=True)
+    LOG.touch(exist_ok=True)
+    r = subprocess.run(["/usr/bin/open", "-a", "Console", str(LOG)], capture_output=True, text=True)
+    print(json.dumps({"ok": r.returncode == 0, "mensaje": "abriendo el registro en Consola" if r.returncode == 0 else r.stderr[:200]}, ensure_ascii=False))
 
 
 def escribir_fichas():
@@ -404,7 +567,12 @@ def escribir_fichas():
         "descripcion": "Este panel.", "carpeta": str(BASE),
         "tarjeta": {"cmd": yo + ["tarjeta"], "campo": "tarjeta", "cada_segundos": 30},
         "acciones": {"estado": {"cmd": yo + ["tarjeta"], "salida": "json"},
-                     "detener": {"cmd": yo + ["detener"], "salida": "json", "confirmar": True}},
+                     "iniciar": {"cmd": yo + ["iniciar", "--sin-abrir"], "salida": "json"},
+                     "reiniciar": {"cmd": yo + ["reiniciar"], "salida": "json"},
+                     "detener": {"cmd": yo + ["detener"], "salida": "json", "confirmar": True},
+                     "ver_log": {"cmd": yo + ["ver_log"], "salida": "json"},
+                     "abrir": {"cmd": ["/usr/bin/open", url()]}},
+        "archivos": {"log": str(LOG), "pid": str(VAR / "botonera.pid"), "plist": str(PLIST)},
     })
     print(json.dumps({"ok": True, "registro": str(reg), "fichas": ["botonera"]}, ensure_ascii=False))
 
@@ -415,8 +583,22 @@ def main():
         servir("--abrir" in sys.argv)
     elif accion_cli == "tarjeta":
         tarjeta_propia()
+    elif accion_cli == "iniciar":
+        iniciar(abrir="--sin-abrir" not in sys.argv)
     elif accion_cli == "detener":
         detener()
+    elif accion_cli == "reiniciar":
+        reiniciar()
+    elif accion_cli == "ver_log":
+        ver_log()
+    elif accion_cli == "servicio":
+        sub = sys.argv[2] if len(sys.argv) > 2 else ""
+        if sub == "instalar":
+            servicio_instalar()
+        elif sub == "desinstalar":
+            servicio_desinstalar()
+        else:
+            sys.exit("uso: botonera.py servicio instalar|desinstalar")
     elif accion_cli == "fichas":
         escribir_fichas()
     else:

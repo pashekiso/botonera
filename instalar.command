@@ -36,12 +36,17 @@ if [ ! -f "$DESTINO/config.json" ]; then
 fi
 cat > "$DESTINO/iniciar_botonera.command" <<EOF
 #!/bin/bash
-# Abre la botonera: deja esta ventana abierta mientras la uses (cerrarla la detiene).
-cd "$DESTINO" && exec "$PY" "$DESTINO/botonera.py" servir --abrir
+# Arranca la Botonera como servicio de usuario (si no está corriendo) y abre el navegador. La ventana se cierra sola.
+"$PY" "$DESTINO/botonera.py" iniciar >/dev/null && exit 0
+echo "No pude arrancar la Botonera. Registro: $DESTINO/var/botonera.log"; read -r -p "Enter para cerrar…" _
 EOF
 chmod +x "$DESTINO/iniciar_botonera.command"
 "$PY" "$DESTINO/botonera.py" fichas >/dev/null
 echo "   ficha propia escrita en $DESTINO/servicios/botonera.json"
+if [ "$(uname)" = "Darwin" ]; then
+  "$PY" "$DESTINO/botonera.py" servicio instalar >/dev/null && echo "   servicio local.botonera corriendo en http://127.0.0.1:$PUERTO/ (arranca solo al iniciar sesión)" \
+    || echo "   AVISO: el servicio no levantó; revisa $DESTINO/var/botonera.log"
+fi
 
 if [ "${1:-}" != "--sin-salud" ]; then
   MH="${MAC_HEALTH_HOME:-$HOME/dev/mac_health}"
@@ -53,5 +58,6 @@ if [ "${1:-}" != "--sin-salud" ]; then
 fi
 
 echo
-echo "Listo. Abre la Botonera con doble clic en: $DESTINO/iniciar_botonera.command"
+echo "Listo. Abre http://127.0.0.1:$PUERTO/ en tu navegador (o doble clic en $DESTINO/iniciar_botonera.command)."
+if [ "$(uname)" = "Darwin" ]; then open "http://127.0.0.1:$PUERTO/" 2>/dev/null || true; fi
 echo "Para sumar tus propios servicios: docs/CONECTAR.md y fichas-ejemplo/."

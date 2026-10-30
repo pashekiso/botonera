@@ -34,10 +34,12 @@ git clone https://github.com/pashekiso/botonera.git   # or Code → Download ZIP
 cd botonera
 bash instalar.command               # panel + OSHealth (Mac health monitor)
 bash instalar.command --sin-salud   # panel only
-open ~/dev/botonera/iniciar_botonera.command
 ```
 
-The Terminal window that opens is the server; keep it open. Your browser opens `http://127.0.0.1:8790/`.
+When it finishes, the panel is already running at `http://127.0.0.1:8790/` as a **user service** (launchd,
+`local.botonera`): it starts by itself at login, with no windows, logging to `~/dev/botonera/var/botonera.log`.
+If you ever stop it, double-click `iniciar_botonera.command` to bring it back. To run it in a Terminal and
+watch its output instead: `python3 ~/dev/botonera/botonera.py servir --abrir`.
 
 ## How it works
 

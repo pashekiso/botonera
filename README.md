@@ -39,11 +39,14 @@ git clone https://github.com/pashekiso/botonera.git   # o descarga el zip: Code 
 cd botonera
 bash instalar.command               # panel + OSHealth (monitor de salud del Mac)
 bash instalar.command --sin-salud   # solo el panel
-open ~/dev/botonera/iniciar_botonera.command
 ```
 
-La Terminal que se abre es el servidor; déjala abierta. El navegador abre `http://127.0.0.1:8790/`.
-`instalar.command` se puede repetir para actualizar: conserva `config.json` y tus fichas.
+Al terminar, la Botonera ya está corriendo en `http://127.0.0.1:8790/` como **servicio de usuario** (launchd,
+`local.botonera`): arranca sola al iniciar sesión, sin ventanas, y su registro queda en
+`~/dev/botonera/var/botonera.log`. Si alguna vez la detienes, `iniciar_botonera.command` (doble clic) la
+vuelve a levantar y abre el navegador. `instalar.command` se puede repetir para actualizar: conserva
+`config.json` y tus fichas. Para correrla en una Terminal y ver su salida en vivo:
+`python3 ~/dev/botonera/botonera.py servir --abrir`.
 
 ## Cómo funciona
 
@@ -94,6 +97,8 @@ Si trabajas con un asistente de IA, [docs/PROMPT-IA.md](docs/PROMPT-IA.md) le ex
 - La mantención de `mac_health` que cierra apps usa AppleScript: la primera vez macOS pide permiso de
   Automatización; vaciar `~/Library/Caches` y la Papelera puede pedir Acceso total al disco para Terminal.
 - No hay autenticación más allá del token local: está pensada para una sola persona en su propio equipo.
+- Desinstalar: `python3 ~/dev/botonera/botonera.py servicio desinstalar`, `python3 ~/dev/mac_health/mac_health.py desinstalar`
+  y borrar `~/dev/botonera` y `~/dev/mac_health`.
 
 ## Licencia
 
