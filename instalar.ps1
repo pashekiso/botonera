@@ -1,8 +1,13 @@
-# instalar.ps1 — Windows (beta): instala (o actualiza) la Botonera en %USERPROFILE%\dev\botonera y OSHealth en \dev\win_health.
+﻿# instalar.ps1 — Windows (beta): instala (o actualiza) la Botonera en %USERPROFILE%\dev\botonera y OSHealth en \dev\win_health.
 #   powershell -ExecutionPolicy Bypass -File instalar.ps1 [--sin-salud]
 # Variables opcionales: BOTONERA_HOME (destino), BOTONERA_PYTHON (python.exe), BOTONERA_PUERTO (8790).
 # Se puede repetir para actualizar: conserva config.json y las fichas que tú agregues.
 $ErrorActionPreference = "Stop"
+# Todo el intercambio con Python y consola en UTF-8 (perfiles con acentos, p. ej. C:\Users\Andrés).
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+$OutputEncoding = [System.Text.Encoding]::UTF8
+$env:PYTHONIOENCODING = "utf-8"
+$env:PYTHONUTF8 = "1"
 $Origen  = Split-Path -Parent $MyInvocation.MyCommand.Path
 $Destino = if ($env:BOTONERA_HOME) { $env:BOTONERA_HOME } else { Join-Path $env:USERPROFILE "dev\botonera" }
 $Puerto  = if ($env:BOTONERA_PUERTO) { $env:BOTONERA_PUERTO } else { 8790 }
@@ -13,15 +18,21 @@ Write-Host "   origen : $Origen"
 Write-Host "   destino: $Destino"
 
 # ---- Python 3.9+ (sin el alias de la Microsoft Store, que solo abre la tienda)
+function Es-Python39 ($exe) {
+    if (-not $exe -or -not (Test-Path $exe) -or ($exe -like "*WindowsApps*")) { return $false }   # el alias de la Store solo abre la tienda
+    try { & $exe -c "import sys; sys.exit(0 if sys.version_info >= (3,9) else 1)" 2>$null; return ($LASTEXITCODE -eq 0) } catch { return $false }
+}
 function Buscar-Python {
-    if ($env:BOTONERA_PYTHON -and (Test-Path $env:BOTONERA_PYTHON)) { return $env:BOTONERA_PYTHON }
-    foreach ($c in @("py -3", "python3", "python")) {
-        try {
-            $exe = $c.Split(" ")[0]; $arg = @(); if ($c -like "py *") { $arg = @("-3") }
-            $v = & $exe @arg -c "import sys; print(sys.executable) if sys.version_info >= (3,9) else exit(1)" 2>$null
-            if ($LASTEXITCODE -eq 0 -and $v -and ($v -notlike "*WindowsApps*")) { return $v.Trim() }
-        } catch {}
+    # La ruta se toma del sistema de archivos (Get-Command / Get-ChildItem), nunca de lo que imprima Python:
+    # con un nombre de usuario con acentos, la salida de consola llega mal codificada.
+    $candidatos = @()
+    if ($env:BOTONERA_PYTHON) { $candidatos += $env:BOTONERA_PYTHON }
+    foreach ($n in @("python3", "python")) { $c = Get-Command $n -ErrorAction SilentlyContinue; if ($c) { $candidatos += $c.Source } }
+    foreach ($raiz in @("$env:LOCALAPPDATA\Programs\Python", "$env:ProgramFiles\Python*", "C:\Python*")) {
+        Get-ChildItem -Path $raiz -Filter python.exe -Recurse -Depth 1 -ErrorAction SilentlyContinue |
+            Sort-Object FullName -Descending | ForEach-Object { $candidatos += $_.FullName }
     }
+    foreach ($c in $candidatos) { if (Es-Python39 $c) { return $c } }
     return $null
 }
 $Py = Buscar-Python

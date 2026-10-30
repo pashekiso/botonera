@@ -50,6 +50,8 @@ WIN = sys.platform == "win32"
 TAREA = "Botonera"                               # nombre de la tarea programada en Windows
 # En Windows, los procesos hijos no deben abrir ventanas de consola (la Botonera corre con pythonw).
 SUBPROC = {"creationflags": subprocess.CREATE_NO_WINDOW} if WIN else {}
+# Los scripts de las fichas (Python) imprimen JSON en UTF-8, con cualquier nombre de usuario y página de códigos.
+ENV_HIJOS = dict(os.environ, PYTHONIOENCODING="utf-8", PYTHONUTF8="1")
 OCULTAS = {"estado", "pendientes", "ver", "aprobar", "aprobar_riesgo_alto", "rechazar", "lanzar", "catalogo",
            "trabajos"}
 ETIQUETAS = {"iniciar": "Iniciar", "iniciar_sin_ventana": "Iniciar sin ventana", "detener": "Detener",
@@ -106,7 +108,8 @@ def fichas():
 def correr(cmd, timeout):
     """Ejecuta una lista de argumentos (sin shell). Devuelve (rc, objeto_json_o_None, texto)."""
     try:
-        r = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, stdin=subprocess.DEVNULL, **SUBPROC)
+        r = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, stdin=subprocess.DEVNULL,
+                           encoding="utf-8", errors="replace", env=ENV_HIJOS, **SUBPROC)
     except subprocess.TimeoutExpired:
         return 124, None, "no respondió en %s s" % timeout
     except (OSError, ValueError) as ex:

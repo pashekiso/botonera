@@ -67,9 +67,9 @@ AVISO_PREPARAR = ("ATENCIÓN, esto va a:\n"
 
 
 # --------------------------------------------------------------------------- utilidades
-def run(cmd, timeout=15):
+def run(cmd, timeout=15, encoding=None):
     try:
-        r = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, **SUBPROC)
+        r = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, encoding=encoding, errors="replace", **SUBPROC)
         return r.returncode, (r.stdout or "") + (r.stderr or "")
     except subprocess.TimeoutExpired:
         return 124, "tiempo agotado (%ss)" % timeout
@@ -81,7 +81,8 @@ def run(cmd, timeout=15):
 
 def ps(script, timeout=40):
     """Ejecuta PowerShell y devuelve (rc, stdout)."""
-    rc, out = run(["powershell", "-NoProfile", "-NonInteractive", "-Command", script], timeout)
+    script = "[Console]::OutputEncoding=[System.Text.Encoding]::UTF8; " + script
+    rc, out = run(["powershell", "-NoProfile", "-NonInteractive", "-Command", script], timeout, encoding="utf-8")
     return rc, out
 
 

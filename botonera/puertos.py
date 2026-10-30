@@ -101,8 +101,8 @@ def _cwd(pids):
 def _netstat_escucha():
     """Windows: {pid: {"comando": "", "direcciones": [(host, puerto)]}} de los sockets TCP en LISTENING."""
     try:
-        r = subprocess.run(["netstat", "-ano", "-p", "tcp"], capture_output=True, text=True, timeout=15, **SUBPROC)
-        r6 = subprocess.run(["netstat", "-ano", "-p", "tcpv6"], capture_output=True, text=True, timeout=15, **SUBPROC)
+        r = subprocess.run(["netstat", "-ano", "-p", "tcp"], capture_output=True, text=True, errors="replace", timeout=15, **SUBPROC)
+        r6 = subprocess.run(["netstat", "-ano", "-p", "tcpv6"], capture_output=True, text=True, errors="replace", timeout=15, **SUBPROC)
     except (OSError, subprocess.TimeoutExpired) as ex:
         raise RuntimeError("no pude ejecutar netstat: %s" % ex)
     out = {}
@@ -122,8 +122,9 @@ def _netstat_escucha():
 
 
 def _powershell(script, timeout=20):
+    script = "[Console]::OutputEncoding=[System.Text.Encoding]::UTF8; " + script
     r = subprocess.run(["powershell", "-NoProfile", "-NonInteractive", "-Command", script],
-                       capture_output=True, text=True, timeout=timeout, **SUBPROC)
+                       capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=timeout, **SUBPROC)
     return r.stdout
 
 
@@ -287,7 +288,7 @@ def detener(pid, puerto, forzar=False, propio_pid=None):
         # taskkill /T cierra también los hijos (los servidores de desarrollo suelen tenerlos); /F fuerza.
         args = ["taskkill", "/PID", str(pid), "/T"] + (["/F"] if forzar else [])
         try:
-            r = subprocess.run(args, capture_output=True, text=True, timeout=15, **SUBPROC)
+            r = subprocess.run(args, capture_output=True, text=True, errors="replace", timeout=15, **SUBPROC)
         except (OSError, subprocess.TimeoutExpired) as ex:
             return {"ok": False, "mensaje": "taskkill: %s" % ex}
         for _ in range(15):
